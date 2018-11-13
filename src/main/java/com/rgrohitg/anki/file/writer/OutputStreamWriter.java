@@ -5,19 +5,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import com.rgrohitg.anki.GameProperties;
 import com.rgrohitg.anki.model.UserGame;
+import com.rgrohitg.anki.service.GameManager;
 
 import lombok.Cleanup;
 
 public class OutputStreamWriter implements Writer<UserGame> {
+
+	GameManager manager = GameManager.getManager();
 
 	@Override
 	public UserGame write(UserGame data) {
 
 		try {
 			@Cleanup
-			FileOutputStream fileStream = new FileOutputStream(GameProperties.USER_GAME_STATE);
+			FileOutputStream fileStream = new FileOutputStream(manager.USER_GAME_STATE);
 			@Cleanup
 			ObjectOutputStream objectStream = new ObjectOutputStream(fileStream);
 			objectStream.writeObject(data);

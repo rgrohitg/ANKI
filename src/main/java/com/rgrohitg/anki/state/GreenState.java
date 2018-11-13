@@ -2,6 +2,11 @@ package com.rgrohitg.anki.state;
 
 public class GreenState implements CardState {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	@Override
 	public void next(Game game) {
 		game.setState(new OrangeState());

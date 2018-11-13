@@ -38,11 +38,4 @@ public class InputStreamReader<T, U> implements Reader<UserGame> {
 
 		return loadedState;
 	}
-
-	@Override
-	public Boolean canRead() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }

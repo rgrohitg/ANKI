@@ -6,6 +6,9 @@ import java.util.List;
 
 import com.rgrohitg.anki.model.Card;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class TextFileReader extends AbstractFileReader {
 
 	public TextFileReader(Reader reader) {
@@ -18,23 +21,17 @@ public class TextFileReader extends AbstractFileReader {
 	}
 
 	@Override
-	public Boolean canRead() {
-		// TODO Auto-generated method stub
-		return reader.canRead();
-	}
-
-	@Override
 	public List<Card> createReferenceData(List<String> cards) {
-		int numberOfCards = cards.size();
+		int numberOfCards = cards.size() - 1;
 		List<Card> objectCards = new ArrayList<>();
-		System.out.println(numberOfCards);
-		cards.stream().forEach(element -> {
-			System.out.println(element);
+		log.debug("Number of Cards = " + numberOfCards);
+		cards.stream().skip(1).forEach(element -> {
 			String[] qa = element.split("\\|");
 			Card card = new Card();
 			card.setQuestion(qa[0]);
 			card.setAnswer(qa[1]);
 			objectCards.add(card);
+			System.out.println(element);
 		});
 
 		return objectCards;

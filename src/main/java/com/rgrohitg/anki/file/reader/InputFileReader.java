@@ -32,7 +32,7 @@ public class InputFileReader implements Reader<String> {
 		@Cleanup
 		BufferedReader parser = new BufferedReader(fileReader);
 
-		if (canRead()) {
+		if (fileName != null && !fileName.isEmpty()) {
 			String line;
 			try {
 				while ((line = parser.readLine()) != null) {
@@ -45,11 +45,6 @@ public class InputFileReader implements Reader<String> {
 			}
 		}
 		return records;
-	}
-
-	@Override
-	public Boolean canRead() {
-		return (fileName != null && !fileName.isEmpty());
 	}
 
 }

@@ -8,5 +8,4 @@ public interface Reader<U> {
 
 	List<U> read() throws FileNotFoundException, IOException;
 
-	Boolean canRead();
 }
