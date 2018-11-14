@@ -1,19 +1,27 @@
 package com.rgrohitg.anki.utils;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 public class Utils {
 
-	public static File file;
+	static File file;
 
-//	static Predicate<String> isNotEmpty = s -> !s.isEmpty() && s != null;
+	private Utils() {
+	}
 
 	public static boolean isFileExist(String name) {
 		file = new File(name);
-
-		if (file.exists()) {
-			return true;
-		}
-		return false;
+		return file.exists();
 	}
+
+	public static boolean isDirectoryExist(String name) {
+		return Paths.get(name).toFile().isDirectory();
+	}
+
+	public static void createDirectory(String name) {
+		file = new File(name);
+		file.mkdirs();
+	}
+
 }

@@ -5,9 +5,11 @@ import java.util.List;
 
 import com.rgrohitg.anki.state.Game;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class UserGame implements Serializable {
 
 	/**

@@ -1,11 +1,9 @@
 package com.rgrohitg.anki.file.reader;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.List;
 
-public interface Reader<U> {
+public interface Reader<T> {
 
-	List<U> read() throws FileNotFoundException, IOException;
+	T read(String path) throws IOException;
 
 }

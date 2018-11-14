@@ -1,21 +1,21 @@
 package com.rgrohitg.anki.file.reader;
 
-import java.util.List;
-
-import com.rgrohitg.anki.model.Card;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * 
  * @author rgroh
  *
  */
-abstract public class AbstractFileReader implements Reader {
+abstract class AbstractFileReader<T> implements Reader<InputStream> {
 
-	protected Reader reader;
+	protected Reader<InputStream> reader;
 
-	public AbstractFileReader(Reader reader) {
+	public AbstractFileReader(Reader<InputStream> reader) {
 		this.reader = reader;
 	}
 
-	abstract public List<Card> createReferenceData(List<String> data);
+	abstract T readFromInputStream(InputStream inputStream) throws IOException;
+
 }

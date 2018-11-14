@@ -1,37 +1,32 @@
 package com.rgrohitg.anki.file.writer;
 
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
 import com.rgrohitg.anki.model.UserGame;
-import com.rgrohitg.anki.service.GameManager;
 
-import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class OutputStreamWriter implements Writer<UserGame> {
 
-	GameManager manager = GameManager.getManager();
-
 	@Override
-	public UserGame write(UserGame data) {
+	public void write(UserGame data, String filePath) {
 
-		try {
-			@Cleanup
-			FileOutputStream fileStream = new FileOutputStream(manager.USER_GAME_STATE);
-			@Cleanup
-			ObjectOutputStream objectStream = new ObjectOutputStream(fileStream);
-			objectStream.writeObject(data);
-
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if (data == null || filePath == null || filePath.isEmpty()) {
+			log.error("Error while saving the user session !!");
+			throw new IllegalArgumentException();
 		}
-		return null;
+
+		File file = new File(filePath);
+
+		try (ObjectOutputStream objectStream = new ObjectOutputStream(new FileOutputStream(file))) {
+			objectStream.writeObject(data);
+		} catch (IOException ioe) {
+			log.error("Unable to write the file :" + ioe);
+		}
 	}
 
 }

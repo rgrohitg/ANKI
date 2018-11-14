@@ -9,8 +9,8 @@ public class GameDataStreamWriter extends AbstractFileWriter<UserGame> {
 	}
 
 	@Override
-	public UserGame write(UserGame data) {
-		return writer.write(data);
+	public void write(UserGame data, String filePath) {
+		writer.write(data, filePath);
 	}
 
 }

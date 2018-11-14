@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.rgrohitg.anki.file.reader.InputFileReader;
-import com.rgrohitg.anki.file.reader.TextFileReader;
+import com.rgrohitg.anki.file.reader.CardsReader;
 import com.rgrohitg.anki.model.Card;
 import com.rgrohitg.anki.utils.Utils;
 
@@ -58,7 +58,7 @@ public class GameManager {
 
 	private void initializeGameProperties() {
 		if (Utils.isFileExist(ABSOLUTE_CARDS_FILE_PATH)) {
-			TextFileReader simpleParser = new TextFileReader(new InputFileReader(ABSOLUTE_CARDS_FILE_PATH));
+			CardsReader simpleParser = new CardsReader(new InputFileReader(ABSOLUTE_CARDS_FILE_PATH));
 
 			try {
 				gameCards = simpleParser.createReferenceData(simpleParser.read());

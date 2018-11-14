@@ -1,41 +1,39 @@
 package com.rgrohitg.anki.file.reader;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.List;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
-import com.rgrohitg.anki.model.UserGame;
+import com.rgrohitg.anki.utils.Utils;
 
-import lombok.AllArgsConstructor;
-import lombok.Cleanup;
-import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-@NoArgsConstructor
-@AllArgsConstructor
-public class InputStreamReader<T, U> implements Reader<UserGame> {
-
-	String fileName;
+@Slf4j
+public class InputStreamReader implements Reader<InputStream> {
 
 	@Override
-	public List<UserGame> read() throws FileNotFoundException, IOException {
-		List<UserGame> loadedState = null;
-		File file = new File(fileName);
-		@Cleanup
-		FileInputStream fileInputStream = new FileInputStream(file);
-		@Cleanup
-		ObjectInputStream is = new ObjectInputStream(fileInputStream);
+	public InputStream read(String path) throws IOException {
 
-		try {
-			loadedState = (List<UserGame>) is.readObject();
-
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if (path == null || path.isEmpty() || !Utils.isFileExist(path)) {
+			log.error("Unable to read file :" + path);
+			throw new IllegalArgumentException();
 		}
+//		File file = new File(path);
+//
+//		InputStream inputStream = new FileInputStream(file);
+//		return inputStream;
 
-		return loadedState;
+		try (Stream<String> stream = Files.lines(Paths.get(path))) {
+
+			return (InputStream) stream;
+
+		} catch (IOException e) {
+			log.error("");
+		}
+		return null;
+
 	}
+
 }
