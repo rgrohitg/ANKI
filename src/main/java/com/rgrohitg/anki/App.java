@@ -6,7 +6,11 @@ package com.rgrohitg.anki;
  */
 public class App {
 	public static void main(String[] args) {
-		Main main = new Main();
+		/**
+		 * This call can be extended dependency injection / Switch case can be added if
+		 * the user interaction mode is different Ex : Console, MobileApp..etc
+		 */
+		AppConsole main = new InteractiveConsole();
 		main.initialize();
 	}
 }

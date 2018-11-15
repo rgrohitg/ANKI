@@ -1,52 +1,27 @@
 package com.rgrohitg.anki.service;
 
-import java.io.FileInputStream;
-import java.io.ObjectInputStream;
+import java.util.List;
+import java.util.Map;
 
+import com.rgrohitg.anki.model.Card;
 import com.rgrohitg.anki.model.UserGame;
-import com.rgrohitg.anki.utils.Utils;
+import com.rgrohitg.anki.state.GameState;
 
-import lombok.extern.slf4j.Slf4j;
+public interface GameSession {
 
-@Slf4j
-public class GameSession {
-	GameManager manager = GameManager.getManager();
-	private static GameSession session = null;
-	private UserGame userGame = null;
+	GameManager getSession();
 
-	public static GameSession getSession() {
-		if (session == null)
-			session = new GameSession();
-		return session;
-	}
+	void updateCardsToStudy(List<Integer> cardsToStudy);
 
-	private GameSession() {
-		loadGameData();
-	}
+	void updateGameState(Map<Integer, GameState> gameState);
 
-	public void initializeUserGameData() {
-		setUserGame(new UserGame());
-	}
+	String getUserGameStorePath();
 
-	private void loadGameData() {
-		try {
-			if (Utils.isFileExist(manager.USER_GAME_STATE)) {
-				FileInputStream fileInputStream = new FileInputStream(manager.USER_GAME_STATE);
-				ObjectInputStream is = new ObjectInputStream(fileInputStream);
-				setUserGame((UserGame) is.readObject());
-				is.close();
-			}
-		} catch (Exception e) {
-			log.error("Error while loading game session.", e);
-			e.printStackTrace();
-		}
-	}
+	List<Integer> getCardsToStudy();
 
-	public UserGame getUserGame() {
-		return userGame;
-	}
+	Map<Integer, Card> getAllCards();
 
-	private void setUserGame(UserGame userGame) {
-		this.userGame = userGame;
-	}
+	Map<Integer, GameState> getGameState();
+
+	UserGame getUserGame();
 }
