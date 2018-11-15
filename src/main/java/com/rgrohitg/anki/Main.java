@@ -8,27 +8,26 @@ import com.rgrohitg.anki.file.writer.OutputStreamWriter;
 import com.rgrohitg.anki.model.User;
 import com.rgrohitg.anki.model.UserGame;
 import com.rgrohitg.anki.service.GameManager;
-import com.rgrohitg.anki.service.GameSession;
-import com.rgrohitg.anki.state.Game;
-import com.rgrohitg.anki.state.NewState;
+import com.rgrohitg.anki.state.GameState;
+import com.rgrohitg.anki.state.RedBox;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Main {
 
-	GameManager manager = GameManager.getManager();;
+	GameManager manager = null;
 
 	public void initialize() {
 		log.info("Initilizing Game---->");
-
-		GameSession session = GameSession.getSession();
-		if (session.getUserGame() == null) {
-			log.debug("No existing game data found , Getting things ready for a new Game!!! ");
-			session.initializeUserGameData();
-
-		}
+		manager = GameManager.getManager();
+		start();
 		testSaveState();
+	}
+
+	private void start() {
+		// TODO Auto-generated method stub
+
 	}
 
 	private void testSaveState() {
@@ -37,49 +36,20 @@ public class Main {
 		userGame.setUser(new User());
 		userGame.getUser().setId("user1");
 		userGame.getUser().setName("Rohit");
-		userGame.setGame(new ArrayList<Game>());
+		userGame.setGame(new ArrayList<GameState>());
 
-		List<Game> games = new ArrayList<Game>();
-		Game game1 = new Game();
-		game1.setCard(manager.gameCards.get(0));
+		List<GameState> games = new ArrayList<>();
+		GameState game1 = new GameState();
+		game1.setCard(manager.getCardsHolder().entrySet().stream().findFirst().get().getKey());
 		game1.setColor("RED");
 
-		NewState newState = new NewState();
+		RedBox newState = new RedBox();
 		newState.next(game1);
-
-		Game game2 = new Game();
-		game2.setCard(manager.gameCards.get(1));
-		game2.setColor("GREEN");
-		newState.next(game2);
-
-		Game game3 = new Game();
-		game3.setCard(manager.gameCards.get(2));
-		game3.setColor("ORANGE");
-		newState.next(game3);
-
-		Game game4 = new Game();
-		game1.setCard(manager.gameCards.get(0));
-		game1.setColor("ORANGE");
-
-		game2.setCard(manager.gameCards.get(1));
-		game2.setColor("ORANGE");
-		newState.next(game2);
-
-		game1.setCard(manager.gameCards.get(0));
-		game1.setColor("RED");
-		newState.next(game1);
-
-		game3.setCard(manager.gameCards.get(2));
-		game3.setColor("RED");
-		newState.next(game3);
 
 		games.add(game1);
-		games.add(game2);
-		games.add(game3);
-
 		userGame.setGame(games);
 
 		GameDataStreamWriter gameState = new GameDataStreamWriter(new OutputStreamWriter());
-		gameState.write(userGame);
+		gameState.write(userGame, manager.getUserGameState());
 	}
 }

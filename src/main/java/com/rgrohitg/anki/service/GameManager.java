@@ -1,13 +1,25 @@
 package com.rgrohitg.anki.service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import com.rgrohitg.anki.file.reader.InputFileReader;
+import com.rgrohitg.anki.enums.BoxEnum;
 import com.rgrohitg.anki.file.reader.CardsReader;
+import com.rgrohitg.anki.file.reader.GameSessionReader;
+import com.rgrohitg.anki.file.reader.InputFileReader;
+import com.rgrohitg.anki.file.reader.InputStreamReader;
 import com.rgrohitg.anki.model.Card;
+import com.rgrohitg.anki.model.User;
+import com.rgrohitg.anki.model.UserGame;
+import com.rgrohitg.anki.state.GameState;
+import com.rgrohitg.anki.state.RedBox;
 import com.rgrohitg.anki.utils.Utils;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -17,15 +29,21 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
+@Getter
 public class GameManager {
 	private static GameManager manager = null;
+	private Map<Integer, Card> cardsHolder = null;
+	private Map<Integer, GameState> gameState = null;
 
-	public String USER = null;
-	public String FILENAME = null;
-	public String FILEPATH = null;
-	public String USER_GAME_STATE = null;
-	public String ABSOLUTE_CARDS_FILE_PATH = null;
-	public List<Card> gameCards = null;
+	private UserGame userGame = null;
+
+	private String userId = null;
+	private String userName = null;
+	private String fileName = null;
+	private String filePath = null;
+	private String userGameState = null;
+	private String cardsAbsolutePath = null;
+	private List<Card> gameCards = null;
 
 	public static GameManager getManager() {
 		if (manager == null)
@@ -36,19 +54,21 @@ public class GameManager {
 
 	private GameManager() {
 		initializeSystemProperties();
-		initializeGameProperties();
+		cardsHolder = loadCards();
+		userGame = loadGameData();
+	}
 
+	private Map<Integer, GameState> restore(UserGame userGame) {
+		return userGame.getGame().stream().collect(Collectors.toMap(GameState::getCard, Function.identity()));
 	}
 
 	private void initializeSystemProperties() {
-
-		USER = System.getProperty("user");
-		FILENAME = System.getProperty("filename");
-		FILEPATH = System.getProperty("filepath");
-		USER_GAME_STATE = USER + FILENAME;
-		ABSOLUTE_CARDS_FILE_PATH = FILEPATH + "\\" + FILENAME;
-		if (USER != null && FILENAME != null && FILEPATH != null && USER_GAME_STATE != null
-				&& ABSOLUTE_CARDS_FILE_PATH != null) {
+		userId = System.getProperty("user");
+		fileName = System.getProperty("filename");
+		filePath = System.getProperty("filepath");
+		userGameState = System.getProperty("userSessionPath");
+		cardsAbsolutePath = filePath + "\\" + fileName;
+		if (userId != null && fileName != null && filePath != null) {
 			log.debug("Sytem properties are loaded properly!!!");
 		} else {
 			loadError();
@@ -56,19 +76,47 @@ public class GameManager {
 
 	}
 
-	private void initializeGameProperties() {
-		if (Utils.isFileExist(ABSOLUTE_CARDS_FILE_PATH)) {
-			CardsReader simpleParser = new CardsReader(new InputFileReader(ABSOLUTE_CARDS_FILE_PATH));
-
-			try {
-				gameCards = simpleParser.createReferenceData(simpleParser.read());
-			} catch (IOException e) {
-				log.error("Unable to read the file " + e);
-				e.printStackTrace();
-			}
-		} else {
-			loadError();
+	private Map<Integer, Card> loadCards() {
+		if (!Utils.isFileExist(cardsAbsolutePath)) {
+			log.error("Empty cards path");
 		}
+		CardsReader cardReader = new CardsReader(new InputFileReader());
+		List<String> cards = null;
+		try {
+			cards = cardReader.read(cardsAbsolutePath);
+		} catch (IOException e) {
+			log.error("Initilization Error ,Unable to readthe cards" + e);
+		}
+		return cardReader.loadData(cards);
+
+	}
+
+	private UserGame loadGameData() {
+		UserGame session = new UserGame();
+		List<GameState> games = new ArrayList<>();
+		GameState game = new GameState();
+		try {
+			if (Utils.isFileExist(userGameState)) {
+				GameSessionReader reader = new GameSessionReader(new InputStreamReader());
+				session = reader.read(userGameState);
+				gameState = restore(session);
+			} else {
+				session.setUser(new User());
+				session.getUser().setId(userId);
+				session.getUser().setName(userName);
+				cardsHolder.entrySet().stream().forEach(card -> {
+					game.setCard(card.getKey());
+					game.setColor(BoxEnum.RED.name());
+					game.setBox(new RedBox());
+					games.add(game);
+				});
+			}
+		} catch (Exception e) {
+			log.error("Error while loading game session.", e);
+		}
+
+		cardsHolder.entrySet().stream().forEach(card -> System.out.println(card.getKey()));
+		return session;
 	}
 
 	private void loadError() {

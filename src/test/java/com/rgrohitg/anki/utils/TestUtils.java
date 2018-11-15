@@ -1,23 +1,28 @@
 package com.rgrohitg.anki.utils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import com.rgrohitg.anki.model.Card;
 import com.rgrohitg.anki.model.User;
 import com.rgrohitg.anki.model.UserGame;
-import com.rgrohitg.anki.state.Game;
+import com.rgrohitg.anki.state.GameState;
 
 public class TestUtils {
 
 	public static UserGame getDefaultUserGame() {
-		List<Game> games = new ArrayList<>();
-		Card card = Card.builder().question("What enzyme breaks down sugars mouth and digestive tract?")
-				.answer("Amylase").build();
-		Game game = Game.builder().card(card).build();
+		List<GameState> games = new ArrayList<>();
+		GameState game = GameState.builder().card(1).build();
 		games.add(game);
 		User user = User.builder().id("user1").name("john").build();
 		UserGame userGame = UserGame.builder().user(user).game(games).build();
 		return userGame;
+	}
+
+	public static Map<Integer, UserGame> getDefaultWriteData() {
+		Map<Integer, UserGame> userSession = new HashMap<>();
+		userSession.put(1, TestUtils.getDefaultUserGame());
+		return userSession;
 	}
 }

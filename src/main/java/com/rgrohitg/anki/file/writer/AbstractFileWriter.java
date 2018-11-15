@@ -1,6 +1,6 @@
 package com.rgrohitg.anki.file.writer;
 
-abstract public class AbstractFileWriter<T> implements Writer<T> {
+abstract class AbstractFileWriter<T> implements Writer<T> {
 
 	protected Writer<T> writer;
 

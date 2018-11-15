@@ -1,4 +1,4 @@
-package com.rgrohitg.anki.model;
+package com.rgrohitg.anki.state;
 
 import java.io.Serializable;
 
@@ -11,12 +11,18 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User implements Serializable {
-	/**
-	* 
-	*/
-	private static final long serialVersionUID = 1L;
+public class GameState implements Serializable {
 
-	private String id;
-	private String name;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private Box box;
+	private Integer card;
+	private String color;
+
+	public void nextState() {
+		box.next(this);
+	}
+
 }

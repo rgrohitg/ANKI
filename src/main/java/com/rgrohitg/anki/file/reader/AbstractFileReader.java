@@ -1,21 +1,16 @@
 package com.rgrohitg.anki.file.reader;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 /**
  * 
  * @author rgroh
  *
  */
-abstract class AbstractFileReader<T> implements Reader<InputStream> {
+abstract class AbstractFileReader<U> implements Reader<U> {
 
-	protected Reader<InputStream> reader;
+	protected Reader<U> reader;
 
-	public AbstractFileReader(Reader<InputStream> reader) {
+	public AbstractFileReader(Reader<U> reader) {
 		this.reader = reader;
 	}
-
-	abstract T readFromInputStream(InputStream inputStream) throws IOException;
 
 }

@@ -1,7 +1,7 @@
 package com.rgrohitg.anki.file.reader;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -15,14 +15,14 @@ public class InputStreamReaderTest {
 
 	@Test
 	public void givenCorrectFilePath_whenIread_thenInputStreamShouldBeReturned() throws IOException {
-		InputStreamReader reader = new InputStreamReader();
-		InputStream inputStream = reader.read(FILE_PATH);
-		Assert.assertNotNull(inputStream);
+		InputFileReader reader = new InputFileReader();
+		List<String> result = reader.read(FILE_PATH);
+		Assert.assertNotNull(result);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void givenWrongFilePath_whenIread_thenIllegalArgumentExceptionIsThrown() throws IOException {
-		InputStreamReader reader = new InputStreamReader();
+		InputFileReader reader = new InputFileReader();
 		reader.read(null);
 	}
 }

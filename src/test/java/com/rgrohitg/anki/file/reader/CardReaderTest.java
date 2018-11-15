@@ -1,22 +1,33 @@
 package com.rgrohitg.anki.file.reader;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
 
+import com.rgrohitg.anki.model.Card;
+
 @RunWith(BlockJUnit4ClassRunner.class)
 public class CardReaderTest {
 
+	private static final String EXPECTED_RESULT = "What enzyme breaks down sugars mouth and digestive tract?|Amylase";
+	private static final int THREE = 3;
 	private static final String FILE_PATH = "C:\\Users\\rgroh\\eclipse-workspace\\rgrohitg.anki\\src\\test\\resources\\Cards_1.txt";
 
 	@Test
 	public void givenInputStream_whenReadFromInputStreamInvoked_ListOfCardsAreReturned() throws IOException {
-		CardsReader cardsReader = new CardsReader(new InputStreamReader());
-		InputStream inputStream = cardsReader.read(FILE_PATH);
-		List<String> cards = cardsReader.readFromInputStream(cardsReader.read(FILE_PATH));
+		CardsReader cardsReader = new CardsReader(new InputFileReader());
+		List<String> inputStream = cardsReader.read(FILE_PATH);
+		Map<Integer, Card> cards = cardsReader.loadData(inputStream);
+		assertNotNull(inputStream);
+		assertNotNull(cards);
+		assertEquals(EXPECTED_RESULT, inputStream.get(1));
+		assertEquals(THREE, cards.size());
 	}
 }
