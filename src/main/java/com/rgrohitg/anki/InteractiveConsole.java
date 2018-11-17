@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import com.rgrohitg.anki.file.writer.GameDataStreamWriter;
@@ -42,11 +43,12 @@ public class InteractiveConsole implements AppConsole {
 
 		Scanner scanner = new Scanner(System.in);
 		System.out.println("Press enter to Start");
-		String readString = scanner.nextLine();
+		scanner.nextLine();
 
 		play(cardsToStudy, scanner);
 		close();
 		save();
+		end();
 
 	}
 
@@ -56,10 +58,12 @@ public class InteractiveConsole implements AppConsole {
 		boolean isValid = true;
 		while (isValid) {
 			cards.stream().forEach(card -> {
-				System.out.println("Question : " + card);
+				String question = session.getAllCards().get(card).getQuestion();
+				String answer = session.getAllCards().get(card).getAnswer();
+				System.out.println("Question : " + question);
 				System.out.println("Press enter to Show answer");
 				if (scanner.nextLine() != null) {
-					System.out.println("ANSWER OF THIS IS ");
+					System.out.println("ANSWER :  "+answer );
 				}
 				System.out.println("1:RED, 2:ORANGE, 3:GREEN :");
 				System.out.println("Enter option to move");
@@ -98,62 +102,37 @@ public class InteractiveConsole implements AppConsole {
 	public void newGame() {
 		// TODO Auto-generated method stub
 
-	}
-
-	private void testSaveState() {
-
-		RedBox newState = new RedBox();
-		RedBox newState2 = new RedBox();
-		RedBox newState3 = new RedBox();
-
-		UserGame userGame = new UserGame();
-		userGame.setUser(new User());
-		userGame.getUser().setId("user1");
-		userGame.getUser().setName("Rohit");
-		userGame.setGame(new ArrayList<GameState>());
-		List<Integer> cardshashCode = session.getAllCards().entrySet().stream().map(Entry::getKey)
-				.collect(Collectors.toList());
-		List<GameState> games = new ArrayList<>();
-
-		GameState game1 = new GameState();
-		game1.setCard(cardshashCode.get(0));
-		game1.setColor("RED");
-		newState.next(game1);
-		games.add(game1);
-
-		GameState game2 = new GameState();
-		game2.setCard(cardshashCode.get(1));
-		game2.setColor("ORANGE");
-		newState2.next(game2);
-		games.add(game2);
-
-		GameState game3 = new GameState();
-		game3.setCard(cardshashCode.get(2));
-		game3.setColor("RED");
-		newState3.next(game3);
-
-		games.add(game3);
-		userGame.setGame(games);
-
-		GameDataStreamWriter gameState = new GameDataStreamWriter(new OutputStreamWriter());
-		gameState.write(userGame, session.getUserGameStorePath());
-	}
+	}	
 
 	@Override
 	public void close() {
 		log.info("No more cards to read for today");
 		session.getGameState().entrySet().stream().map(Entry::getValue).forEach(eodState::add);
+		session.getGameState().entrySet().stream().forEach(entry->{
+			if(entry.getValue().getColor().equals("ORANGE")){
+				entry.getValue().setColor("RED");
+				entry.getValue().nextState();
+			}else if(entry.getValue().getColor().equals("GREEN")){
+				entry.getValue().setColor("ORANGE");
+				entry.getValue().nextState();
+			}			
+			});
 	}
 
+	Predicate<String> colorPredicate= element->element.equals("RED");
+	
 	@Override
 	public void end() {
-		// TODO Auto-generated method stub
+		boolean isGameCompleted = session.getUserGame().getGame().stream().map(GameState::getColor).anyMatch(colorPredicate);
+		if(!isGameCompleted){
+			log.info("User completed the game");
+			System.out.println("Congratulation !!! , Game finished succesfully");
+		}
 
 	}
 
 	@Override
 	public void save() {
-		session.getUserGame().setGame(eodState);
 		GameDataStreamWriter gameState = new GameDataStreamWriter(new OutputStreamWriter());
 		gameState.write(session.getUserGame(), session.getUserGameStorePath());
 	}

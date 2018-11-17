@@ -70,17 +70,19 @@ public class GameHelper {
 	public UserGame createNewUserGame(User user, Map<Integer, Card> cards) {
 		UserGame session = new UserGame();
 		List<GameState> games = new ArrayList<>();
-		GameState game = new GameState();
+		
 
 		session.setUser(new User());
 		session.getUser().setId(user.getId());
 		session.getUser().setName(user.getName());
 		cards.entrySet().stream().forEach(card -> {
+			GameState game = new GameState();
 			game.setCard(card.getKey());
 			game.setColor(BoxEnum.RED.name());
 			game.setBox(new RedBox());
 			games.add(game);
 		});
+		session.setGame(games);
 		return session;
 	}
 

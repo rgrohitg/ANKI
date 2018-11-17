@@ -70,11 +70,11 @@ public class GameManager {
 	private UserGame loadGameData() {
 		UserGame session = helper.readGameState(userGameStorePath);
 
-		if (userGame == null) {
+		if (session == null) {
 			User user = new User();
 			user.setId(userId);
 			user.setName(userName);
-			userGame = helper.createNewUserGame(user, cardsHolder);
+			session = helper.createNewUserGame(user, cardsHolder);
 		}
 
 		gameState = helper.restore(session);

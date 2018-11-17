@@ -50,6 +50,6 @@ public class Main {
 		userGame.setGame(games);
 
 		GameDataStreamWriter gameState = new GameDataStreamWriter(new OutputStreamWriter());
-		gameState.write(userGame, manager.getUserGameState());
+		gameState.write(userGame, manager.getUserGameStorePath());
 	}
 }
