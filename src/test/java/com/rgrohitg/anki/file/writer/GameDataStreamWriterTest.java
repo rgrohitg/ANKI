@@ -13,8 +13,7 @@ import com.rgrohitg.anki.utils.TestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class GameDataStreamWriterTest {
-	private static final String USER_SESSION_FILE_SUCCESS = "C:\\Users\\rgroh\\eclipse-workspace\\rgrohitg.anki\\data\\user1QA1.txt"
-			+ (System.currentTimeMillis());
+	private static final String USER_SESSION_FILE_SUCCESS = "data/user1QA2.txt";
 
 	GameDataStreamWriter gameWriter;
 

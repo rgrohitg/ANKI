@@ -7,9 +7,7 @@ import com.rgrohitg.anki.model.Card;
 import com.rgrohitg.anki.model.UserGame;
 import com.rgrohitg.anki.state.GameState;
 
-public interface GameSession {
-
-	GameManager getSession();
+public interface GameService {
 
 	void updateCardsToStudy(List<Integer> cardsToStudy);
 
@@ -24,4 +22,14 @@ public interface GameSession {
 	Map<Integer, GameState> getGameState();
 
 	UserGame getUserGame();
+
+	boolean isGameCompleted();
+
+	void preSaveSession();
+
+	void saveSession(UserGame userGame, String userGameStorePath);
+
+	String getQuestion(Integer cardNumber);
+
+	String getAnswer(Integer cardNumber);
 }

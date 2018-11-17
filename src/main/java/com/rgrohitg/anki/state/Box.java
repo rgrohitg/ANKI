@@ -6,5 +6,4 @@ interface Box extends Serializable {
 
 	void next(GameState game);
 
-	void printStatus(GameState game);
 }

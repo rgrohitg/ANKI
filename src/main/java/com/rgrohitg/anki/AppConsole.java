@@ -7,8 +7,6 @@ public interface AppConsole {
 
 	void newGame();
 
-	void close();
-
 	void end();
 
 	void save();

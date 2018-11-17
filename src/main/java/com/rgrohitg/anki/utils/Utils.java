@@ -11,17 +11,6 @@ public class Utils {
 	}
 
 	public static boolean isFileExist(String name) {
-		file = new File(name);
-		return file.exists();
+		return Paths.get(name).toFile().exists();
 	}
-
-	public static boolean isDirectoryExist(String name) {
-		return Paths.get(name).toFile().isDirectory();
-	}
-
-	public static void createDirectory(String name) {
-		file = new File(name);
-		file.mkdirs();
-	}
-
 }

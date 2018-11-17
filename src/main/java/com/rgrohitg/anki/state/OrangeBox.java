@@ -1,8 +1,5 @@
 package com.rgrohitg.anki.state;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class OrangeBox implements Box {
 
 	/**
@@ -13,11 +10,6 @@ public class OrangeBox implements Box {
 	@Override
 	public void next(GameState game) {
 		game.setBox(new RedBox());
-	}
-
-	@Override
-	public void printStatus(GameState game) {
-		log.info(game.getColor());
 	}
 
 }

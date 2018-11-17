@@ -6,16 +6,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
 
-import com.rgrohitg.anki.enums.BoxEnum;
-
 @RunWith(BlockJUnit4ClassRunner.class)
 public class GameStateTest {
 
 	@Test
 	public void givenCardIsInRedStatus_whenAnswerIsComplete_thenAfterTwoDaysCardShouldbeInRedBox() {
 
-		GameState gameState = GameState.builder().card(1).color(BoxEnum.RED.name()).box(new RedBox()).build();
-		gameState.setColor(BoxEnum.GREEN.name());
+		GameState gameState = GameState.builder().card(1).color(BoxColor.RED).box(new RedBox()).build();
+		gameState.setColor(BoxColor.GREEN);
 		gameState.nextState();
 		assertTrue(gameState.getBox() instanceof GreenBox);
 
@@ -30,8 +28,8 @@ public class GameStateTest {
 	@Test
 	public void givenCardIsInRedStatus_whenAnswerIsPartial_thenStateShouldChangeToOrangeAndSholdBereadyToreadnextDay() {
 
-		GameState gameState = GameState.builder().card(1).color(BoxEnum.RED.name()).box(new RedBox()).build();
-		gameState.setColor(BoxEnum.ORANGE.name());
+		GameState gameState = GameState.builder().card(1).color(BoxColor.RED).box(new RedBox()).build();
+		gameState.setColor(BoxColor.ORANGE);
 		gameState.nextState();
 		assertTrue(gameState.getBox() instanceof OrangeBox);
 
@@ -40,4 +38,16 @@ public class GameStateTest {
 
 	}
 
+	@Test
+	public void givenCardIsInRedStatus_whenAnswerIsNotKnown_thenStateShouldRemainInRedAndForReadingSameDay() {
+
+		GameState gameState = GameState.builder().card(1).color(BoxColor.RED).box(new RedBox()).build();
+		gameState.setColor(BoxColor.RED);
+		gameState.nextState();
+		assertTrue(gameState.getBox() instanceof RedBox);
+
+		gameState.nextState();
+		assertTrue(gameState.getBox() instanceof RedBox);
+
+	}
 }

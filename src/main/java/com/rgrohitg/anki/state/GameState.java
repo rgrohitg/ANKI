@@ -19,7 +19,7 @@ public class GameState implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private Box box;
 	private Integer card;
-	private String color;
+	private BoxColor color;
 
 	public void nextState() {
 		box.next(this);

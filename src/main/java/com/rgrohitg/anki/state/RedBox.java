@@ -1,5 +1,7 @@
 package com.rgrohitg.anki.state;
 
+import com.rgrohitg.anki.service.Constants;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -13,27 +15,22 @@ public class RedBox implements Box {
 	@Override
 	public void next(GameState game) {
 		Box state = null;
-		switch (game.getColor()) {
-		case "GREEN":
+		switch (game.getColor().name()) {
+		case Constants.GREEN:
 			state = new GreenBox();
 			break;
-		case "ORANGE":
+		case Constants.ORANGE:
 			state = new OrangeBox();
 			break;
-		case "RED":
+		case Constants.RED:
 			state = new RedBox();
 			break;
 		default:
-			// TODO
+			log.warn("Oops,This case will never happen");
 			break;
 		}
 		game.setBox(state);
 
-	}
-
-	@Override
-	public void printStatus(GameState game) {
-		log.info(game.getColor());
 	}
 
 }
