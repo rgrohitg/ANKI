@@ -1,7 +1,10 @@
 package com.rgrohitg.anki;
 
+import com.rgrohitg.anki.console.AppConsole;
+import com.rgrohitg.anki.console.ConsoleFactory;
+
 /**
- * Hello world!
+ * Main class !
  *
  */
 public class App {
@@ -10,7 +13,7 @@ public class App {
 		 * This call can be extended dependency injection / Switch case can be added if
 		 * the user interaction mode is different Ex : Console, MobileApp..etc
 		 */
-		AppConsole main = new InteractiveConsole();
-		main.initialize();
+		AppConsole main = ConsoleFactory.getConsole(ConfigProperties.CONSOLE_MODE);
+		main.run();
 	}
 }

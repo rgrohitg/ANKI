@@ -23,6 +23,12 @@ import com.rgrohitg.anki.utils.Utils;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Game Manager Helper class to manage all system initialization tasks
+ * 
+ * @author rgroh
+ *
+ */
 @Slf4j
 @NoArgsConstructor
 public class GameHelper {
@@ -41,14 +47,18 @@ public class GameHelper {
 	}
 
 	public Map<Integer, Card> loadCards(String filePath) {
-		if (!Utils.isFileExist(filePath)) {
-			log.error("Empty cards path");
-		}
+
+		List<String> cards = null;
 		CardsReader cardReader = new CardsReader(
 				ReaderFactory.getReader(GameManager.getManager().getConfigMap().get(Constants.QUESTIONS_READ_MODE)));
-		List<String> cards = null;
+
 		try {
+			if (!Utils.isFileExist(filePath)) {
+				log.error("Empty cards path");
+			}
 			cards = cardReader.read(filePath);
+		} catch (IllegalArgumentException e) {
+			log.error("Empty cards path" + e);
 		} catch (IOException e) {
 			log.error("Initilization Error ,Unable to readthe cards" + e);
 		}

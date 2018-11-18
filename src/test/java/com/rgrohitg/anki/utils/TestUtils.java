@@ -29,6 +29,7 @@ public class TestUtils {
 		System.setProperty("writeMode", "java");
 		System.setProperty("userGameDataReadMode", "java");
 		System.setProperty("questionsReadMode", "file");
+		System.setProperty("appConsole", "java_console");
 
 	}
 }

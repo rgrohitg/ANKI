@@ -11,6 +11,13 @@ import com.rgrohitg.anki.model.UserGame;
 import com.rgrohitg.anki.state.BoxColor;
 import com.rgrohitg.anki.state.GameState;
 
+/**
+ * Service class which will manage all operations from client to Repository In
+ * this case from interactive console to Game manager
+ * 
+ * @author rgroh
+ *
+ */
 public class GameServiceImpl implements GameService {
 
 	protected GameManager manager;

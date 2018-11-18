@@ -1,0 +1,99 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: GameDataStreamWriter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.rgrohitg.anki.file.writer</a> ]
+</div>
+
+<h1>Coverage Summary for Class: GameDataStreamWriter (com.rgrohitg.anki.file.writer)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GameDataStreamWriter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.rgrohitg.anki.file.writer;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import com.rgrohitg.anki.model.UserGame;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;public class GameDataStreamWriter extends AbstractFileWriter&lt;UserGame&gt; {
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;	public GameDataStreamWriter(Writer&lt;UserGame&gt; writer) {
+<b class="fc"><i>8</i>&nbsp;		super(writer);</b>
+<b class="fc"><i>9</i>&nbsp;	}</b>
+<i>10</i>&nbsp;
+<i>11</i>&nbsp;	@Override
+<i>12</i>&nbsp;	public void write(UserGame data, String filePath) {
+<b class="fc"><i>13</i>&nbsp;		writer.write(data, filePath);</b>
+<b class="fc"><i>14</i>&nbsp;	}</b>
+<i>15</i>&nbsp;
+<i>16</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-11-18 22:19</div>
+</div>
+</body>
+</html>

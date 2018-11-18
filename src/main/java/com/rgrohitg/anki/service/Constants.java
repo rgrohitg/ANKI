@@ -27,7 +27,8 @@ public class Constants {
 	public static final String BOX_OPTION_MESSAGE = "1:RED, 2:ORANGE, 3:GREEN :";
 
 	// INERACTION MODE
-	public static final String CONSOLE = "java_console";
+	public static final String CONSOLE_MODE = "appConsole";
+	public static final String JAVACONSOLE = "java_console";
 	public static final String ANDROID = "android";
 	public static final String WEB = "WEB";
 

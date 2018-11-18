@@ -206,9 +206,12 @@
 					<!-- Skips unit tests if the value of skip.unit.tests property is true -->
 					<skipTests>${skip.unit.tests}</skipTests>
 					<!-- Excludes integration tests when unit tests are run. -->
-					<excludes>
-						<exclude>**/IT*.java</exclude>
-					</excludes>
+					<forkMode>always</forkMode>
+					<reuseForks>false</reuseForks>
+					<includes>
+						<include>**/*Test.java</include>
+						<include>**/*IT*.java</include>
+					</includes>
 				</configuration>
 			</plugin>
 			<!-- Used for integration tests -->
@@ -239,7 +242,8 @@
 		</plugins>
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>

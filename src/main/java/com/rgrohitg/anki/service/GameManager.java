@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.rgrohitg.anki.ConfigProperties;
 import com.rgrohitg.anki.model.Card;
 import com.rgrohitg.anki.model.User;
 import com.rgrohitg.anki.model.UserGame;
@@ -13,7 +14,8 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Singleton property class to initialize username & question and answer data
+ * Singleton Manager class to initialize User game , Its a kind of repository
+ * class
  * 
  * @author rgroh
  *
@@ -52,14 +54,15 @@ public class GameManager {
 
 	protected void initializeSystemProperties() {
 		configMap = new HashMap<>();
-		configMap.put(Constants.CONFIG_USER_ID, System.getProperty(Constants.CONFIG_USER_ID));
-		configMap.put(Constants.CONFIG_FILENAME, System.getProperty(Constants.CONFIG_FILENAME));
-		configMap.put(Constants.CONFIG_FILEPATH, System.getProperty(Constants.CONFIG_FILEPATH));
-		configMap.put(Constants.CONFIG_USER_GAME_STORE_PATH, System.getProperty(Constants.CONFIG_USER_GAME_STORE_PATH));
-		configMap.put(Constants.CONFIG_CARDS_FILE_PATH, System.getProperty(Constants.CONFIG_CARDS_FILE_PATH));
-		configMap.put(Constants.WRITE_MODE, System.getProperty(Constants.WRITE_MODE));
-		configMap.put(Constants.QUESTIONS_READ_MODE, System.getProperty(Constants.QUESTIONS_READ_MODE));
-		configMap.put(Constants.USER_GAME_DATA_READ_MODE, System.getProperty(Constants.USER_GAME_DATA_READ_MODE));
+		configMap.put(Constants.CONFIG_USER_ID, ConfigProperties.USER_ID);
+		configMap.put(Constants.CONFIG_FILENAME, ConfigProperties.FILENAME);
+		configMap.put(Constants.CONFIG_FILEPATH, ConfigProperties.FILEPATH);
+		configMap.put(Constants.CONFIG_USER_GAME_STORE_PATH, ConfigProperties.USER_GAME_STORE_PATH);
+		configMap.put(Constants.CONFIG_CARDS_FILE_PATH, ConfigProperties.CARDS_FILE_PATH);
+		configMap.put(Constants.WRITE_MODE, ConfigProperties.WRITE_MODE);
+		configMap.put(Constants.QUESTIONS_READ_MODE, ConfigProperties.QUESTIONS_READ_MODE);
+		configMap.put(Constants.USER_GAME_DATA_READ_MODE, ConfigProperties.USER_GAME_DATA_READ_MODE);
+		configMap.put(Constants.CONSOLE_MODE, ConfigProperties.CONSOLE_MODE);
 
 		if (configMap.get(Constants.CONFIG_USER_ID) != null && configMap.get(Constants.CONFIG_FILENAME) != null
 				&& configMap.get(Constants.CONFIG_CARDS_FILE_PATH) != null) {

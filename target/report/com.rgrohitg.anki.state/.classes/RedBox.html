@@ -1,0 +1,119 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: RedBox</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.rgrohitg.anki.state</a> ]
+</div>
+
+<h1>Coverage Summary for Class: RedBox (com.rgrohitg.anki.state)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">RedBox</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    92.9%
+  </span>
+  <span class="absValue">
+    (13/ 14)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.rgrohitg.anki.state;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import com.rgrohitg.anki.service.Constants;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;import lombok.extern.slf4j.Slf4j;
+<i>6</i>&nbsp;
+<b class="fc"><i>7</i>&nbsp;@Slf4j</b>
+<b class="fc"><i>8</i>&nbsp;public class RedBox implements Box {</b>
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;	/**
+<i>11</i>&nbsp;	 * 
+<i>12</i>&nbsp;	 */
+<b class="fc"><i>13</i>&nbsp;	private static final long serialVersionUID = 1L;</b>
+<i>14</i>&nbsp;
+<i>15</i>&nbsp;	@Override
+<i>16</i>&nbsp;	public void next(GameState game) {
+<b class="fc"><i>17</i>&nbsp;		Box state = null;</b>
+<b class="fc"><i>18</i>&nbsp;		switch (game.getColor().name()) {</b>
+<i>19</i>&nbsp;		case Constants.GREEN:
+<b class="fc"><i>20</i>&nbsp;			state = new GreenBox();</b>
+<b class="fc"><i>21</i>&nbsp;			break;</b>
+<i>22</i>&nbsp;		case Constants.ORANGE:
+<b class="fc"><i>23</i>&nbsp;			state = new OrangeBox();</b>
+<b class="fc"><i>24</i>&nbsp;			break;</b>
+<i>25</i>&nbsp;		case Constants.RED:
+<b class="fc"><i>26</i>&nbsp;			state = new RedBox();</b>
+<b class="fc"><i>27</i>&nbsp;			break;</b>
+<i>28</i>&nbsp;		default:
+<b class="nc"><i>29</i>&nbsp;			log.warn(&quot;Oops,This case will never happen&quot;);</b>
+<i>30</i>&nbsp;			break;
+<i>31</i>&nbsp;		}
+<b class="fc"><i>32</i>&nbsp;		game.setBox(state);</b>
+<i>33</i>&nbsp;
+<b class="fc"><i>34</i>&nbsp;	}</b>
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-11-18 22:19</div>
+</div>
+</body>
+</html>

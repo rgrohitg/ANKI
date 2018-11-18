@@ -7,6 +7,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Each card Game state
+ * 
+ * @author rgroh
+ *
+ */
 @Data
 @Builder
 @NoArgsConstructor

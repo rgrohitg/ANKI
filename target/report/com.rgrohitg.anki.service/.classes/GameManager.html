@@ -1,0 +1,183 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: GameManager</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.rgrohitg.anki.service</a> ]
+</div>
+
+<h1>Coverage Summary for Class: GameManager (com.rgrohitg.anki.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GameManager</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.2%
+  </span>
+  <span class="absValue">
+    (13/ 16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.3%
+  </span>
+  <span class="absValue">
+    (36/ 46)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.rgrohitg.anki.service;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.util.HashMap;
+<i>4</i>&nbsp;import java.util.List;
+<i>5</i>&nbsp;import java.util.Map;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;import com.rgrohitg.anki.ConfigProperties;
+<i>8</i>&nbsp;import com.rgrohitg.anki.model.Card;
+<i>9</i>&nbsp;import com.rgrohitg.anki.model.User;
+<i>10</i>&nbsp;import com.rgrohitg.anki.model.UserGame;
+<i>11</i>&nbsp;import com.rgrohitg.anki.state.GameState;
+<i>12</i>&nbsp;
+<i>13</i>&nbsp;import lombok.Data;
+<i>14</i>&nbsp;import lombok.extern.slf4j.Slf4j;
+<i>15</i>&nbsp;
+<i>16</i>&nbsp;/**
+<i>17</i>&nbsp; * Singleton Manager class to initialize User game , Its a kind of repository
+<i>18</i>&nbsp; * class
+<i>19</i>&nbsp; * 
+<i>20</i>&nbsp; * @author rgroh
+<i>21</i>&nbsp; *
+<b class="fc"><i>22</i>&nbsp; */</b>
+<b class="nc"><i>23</i>&nbsp;@Slf4j</b>
+<i>24</i>&nbsp;@Data
+<i>25</i>&nbsp;public class GameManager {
+<i>26</i>&nbsp;
+<b class="fc"><i>27</i>&nbsp;	private static GameManager manager;</b>
+<b class="fc"><i>28</i>&nbsp;	private Map&lt;Integer, Card&gt; cardsHolder;</b>
+<b class="fc"><i>29</i>&nbsp;	private Map&lt;Integer, GameState&gt; gameState;</b>
+<b class="fc"><i>30</i>&nbsp;	private List&lt;Integer&gt; cardsToStudy;</b>
+<i>31</i>&nbsp;	protected Map&lt;String, String&gt; configMap;
+<b class="nc"><i>32</i>&nbsp;</b>
+<b class="fc"><i>33</i>&nbsp;	private GameHelper helper = new GameHelper();</b>
+<i>34</i>&nbsp;	private UserGame userGame = null;
+<b class="fc"><i>35</i>&nbsp;</b>
+<i>36</i>&nbsp;	private List&lt;Card&gt; gameCards = null;
+<i>37</i>&nbsp;
+<b class="fc"><i>38</i>&nbsp;	protected static GameManager getManager() {</b>
+<b class="fc"><i>39</i>&nbsp;		if (manager == null)</b>
+<i>40</i>&nbsp;			manager = new GameManager();
+<b class="fc"><i>41</i>&nbsp;</b>
+<i>42</i>&nbsp;		return manager;
+<i>43</i>&nbsp;	}
+<i>44</i>&nbsp;
+<b class="fc"><i>45</i>&nbsp;	private GameManager() {</b>
+<b class="fc"><i>46</i>&nbsp;		super();</b>
+<i>47</i>&nbsp;	}
+<i>48</i>&nbsp;
+<b class="fc"><i>49</i>&nbsp;	protected void initializeGame() {</b>
+<b class="fc"><i>50</i>&nbsp;		initializeSystemProperties();</b>
+<b class="fc"><i>51</i>&nbsp;		cardsHolder = loadCards(configMap.get(Constants.CONFIG_CARDS_FILE_PATH));</b>
+<b class="fc"><i>52</i>&nbsp;		userGame = loadGameData();</b>
+<i>53</i>&nbsp;	}
+<i>54</i>&nbsp;
+<b class="fc"><i>55</i>&nbsp;	protected void initializeSystemProperties() {</b>
+<b class="fc"><i>56</i>&nbsp;		configMap = new HashMap&lt;&gt;();</b>
+<b class="fc"><i>57</i>&nbsp;		configMap.put(Constants.CONFIG_USER_ID, ConfigProperties.USER_ID);</b>
+<b class="fc"><i>58</i>&nbsp;		configMap.put(Constants.CONFIG_FILENAME, ConfigProperties.FILENAME);</b>
+<b class="fc"><i>59</i>&nbsp;		configMap.put(Constants.CONFIG_FILEPATH, ConfigProperties.FILEPATH);</b>
+<b class="fc"><i>60</i>&nbsp;		configMap.put(Constants.CONFIG_USER_GAME_STORE_PATH, ConfigProperties.USER_GAME_STORE_PATH);</b>
+<b class="fc"><i>61</i>&nbsp;		configMap.put(Constants.CONFIG_CARDS_FILE_PATH, ConfigProperties.CARDS_FILE_PATH);</b>
+<b class="fc"><i>62</i>&nbsp;		configMap.put(Constants.WRITE_MODE, ConfigProperties.WRITE_MODE);</b>
+<b class="fc"><i>63</i>&nbsp;		configMap.put(Constants.QUESTIONS_READ_MODE, ConfigProperties.QUESTIONS_READ_MODE);</b>
+<b class="fc"><i>64</i>&nbsp;		configMap.put(Constants.USER_GAME_DATA_READ_MODE, ConfigProperties.USER_GAME_DATA_READ_MODE);</b>
+<i>65</i>&nbsp;		configMap.put(Constants.CONSOLE_MODE, ConfigProperties.CONSOLE_MODE);
+<b class="fc"><i>66</i>&nbsp;</b>
+<b class="fc"><i>67</i>&nbsp;		if (configMap.get(Constants.CONFIG_USER_ID) != null &amp;&amp; configMap.get(Constants.CONFIG_FILENAME) != null</b>
+<b class="fc"><i>68</i>&nbsp;				&amp;&amp; configMap.get(Constants.CONFIG_CARDS_FILE_PATH) != null) {</b>
+<i>69</i>&nbsp;			log.info(&quot;Sytem properties are loaded properly!!!&quot;);
+<b class="nc"><i>70</i>&nbsp;		} else {</b>
+<i>71</i>&nbsp;			loadError();
+<i>72</i>&nbsp;		}
+<b class="fc"><i>73</i>&nbsp;</b>
+<i>74</i>&nbsp;	}
+<i>75</i>&nbsp;
+<b class="fc"><i>76</i>&nbsp;	private Map&lt;Integer, Card&gt; loadCards(String cardsAbsolutePath) {</b>
+<i>77</i>&nbsp;		return helper.loadCards(cardsAbsolutePath);
+<i>78</i>&nbsp;	}
+<i>79</i>&nbsp;
+<b class="fc"><i>80</i>&nbsp;	private UserGame loadGameData() {</b>
+<i>81</i>&nbsp;		UserGame savedUserGame = helper.readGameState(configMap.get(Constants.CONFIG_USER_GAME_STORE_PATH));
+<b class="fc"><i>82</i>&nbsp;</b>
+<b class="nc"><i>83</i>&nbsp;		if (savedUserGame == null) {</b>
+<b class="nc"><i>84</i>&nbsp;			User user = new User();</b>
+<b class="nc"><i>85</i>&nbsp;			user.setId(Constants.CONFIG_USER_ID);</b>
+<b class="nc"><i>86</i>&nbsp;			user.setName(Constants.CONFIG_USER_ID);</b>
+<i>87</i>&nbsp;			savedUserGame = helper.createNewUserGame(user, cardsHolder);
+<i>88</i>&nbsp;		}
+<b class="fc"><i>89</i>&nbsp;</b>
+<b class="fc"><i>90</i>&nbsp;		gameState = helper.restore(savedUserGame);</b>
+<b class="fc"><i>91</i>&nbsp;		cardsToStudy = helper.getCardsInRedBox(gameState);</b>
+<i>92</i>&nbsp;		return savedUserGame;
+<i>93</i>&nbsp;	}
+<i>94</i>&nbsp;
+<b class="nc"><i>95</i>&nbsp;	private static void loadError() {</b>
+<b class="nc"><i>96</i>&nbsp;		log.error(&quot;Unable to load the System properties existing!!!!!!&quot;);</b>
+<b class="nc"><i>97</i>&nbsp;		System.exit(0);</b>
+<i>98</i>&nbsp;	}
+<i>99</i>&nbsp;
+<i>100</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2018-11-18 22:19</div>
+</div>
+</body>
+</html>

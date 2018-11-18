@@ -2,16 +2,17 @@ package com.rgrohitg.anki.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.runners.BlockJUnit4ClassRunner;
 
 import com.rgrohitg.anki.utils.TestUtils;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(BlockJUnit4ClassRunner.class)
 public class GameServiceImplTest {
 	GameManager manager = GameManager.getManager();
 
@@ -32,6 +33,7 @@ public class GameServiceImplTest {
 		service.updateGameState(1748572806, service.getGameState().get(1748572806));
 		service.preSaveSession();
 		service.saveSession(service.getUserGame(), service.getUserGameStorePath());
+		assertTrue(service.isGameCompleted());
 	}
 
 }

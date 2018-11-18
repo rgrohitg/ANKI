@@ -4,13 +4,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.MethodSorters;
 
 import com.rgrohitg.anki.utils.TestUtils;
 
 @RunWith(BlockJUnit4ClassRunner.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class GameManagerTest {
 
 	@Test
@@ -27,7 +30,7 @@ public class GameManagerTest {
 		TestUtils.setSystemProperties();
 		manager.initializeGame();
 		assertNotNull(manager.getConfigMap());
-		assertEquals(manager.configMap.get("userId"), "Rohit");
+		assertEquals("Rohit", manager.configMap.get("userId"));
 
 		assertNotNull(manager.getCardsHolder());
 	}
@@ -39,7 +42,7 @@ public class GameManagerTest {
 		System.setProperty("userGameStorePath", "src/test/resources/correct_user_game_state.txt");
 		manager.initializeGame();
 		assertNotNull(manager.getConfigMap());
-		assertEquals(manager.configMap.get("userId"), "Rohit");
+		assertEquals("Rohit", manager.configMap.get("userId"));
 		assertNotNull(manager.getCardsHolder());
 		assertNotNull(manager.getCardsToStudy());
 		assertNull(manager.getGameCards());
@@ -52,12 +55,15 @@ public class GameManagerTest {
 
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void testInitializeGameWithtEMptyFilePath() {
 		GameManager manager = GameManager.getManager();
 		TestUtils.setSystemProperties();
-		System.setProperty("userGameStorePath", "src/test/resources/wrong_user_game_state.txt");
-		System.setProperty("cardsFilePath", "src/test/resources/wrong_path.txt");
+		System.setProperty("userGameStorePath", "");
+		System.setProperty("cardsFilePath", "");
+		manager.configMap.put("userGameStorePath", "");
+		manager.configMap.put("cardsFilePath", "");
+
 		manager.initializeGame();
 	}
 
