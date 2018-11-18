@@ -63,7 +63,7 @@ public class GameHelper {
 						.getReader(GameManager.getManager().getConfigMap().get(Constants.USER_GAME_DATA_READ_MODE)));
 				userGame = reader.read(userGameState);
 			}
-		} catch (Exception e) {
+		} catch (IOException e) {
 			log.error("Error while loading game session ,Corrupted data", e);
 			loadError();
 		}

@@ -21,14 +21,8 @@ public class GameServiceImpl implements GameService {
 	}
 
 	@Override
-	public void updateCardsToStudy(List<Integer> cardsToStudy) {
-		manager.setCardsToStudy(cardsToStudy);
-
-	}
-
-	@Override
-	public void updateGameState(Map<Integer, GameState> gameState) {
-		manager.setGameState(gameState);
+	public void updateGameState(Integer card, GameState gameState) {
+		manager.getGameState().put(card, gameState);
 	}
 
 	@Override

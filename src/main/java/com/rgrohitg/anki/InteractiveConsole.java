@@ -84,7 +84,7 @@ public class InteractiveConsole implements AppConsole {
 				break;
 			}
 			game.nextState();
-			gameService.getGameState().put(card, game);
+			gameService.updateGameState(card, game);
 		}
 	}
 

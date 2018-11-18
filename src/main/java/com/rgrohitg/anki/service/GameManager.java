@@ -50,7 +50,7 @@ public class GameManager {
 		userGame = loadGameData();
 	}
 
-	private void initializeSystemProperties() {
+	protected void initializeSystemProperties() {
 		configMap = new HashMap<>();
 		configMap.put(Constants.CONFIG_USER_ID, System.getProperty(Constants.CONFIG_USER_ID));
 		configMap.put(Constants.CONFIG_FILENAME, System.getProperty(Constants.CONFIG_FILENAME));

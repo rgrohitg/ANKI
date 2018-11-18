@@ -9,9 +9,7 @@ import com.rgrohitg.anki.state.GameState;
 
 public interface GameService {
 
-	void updateCardsToStudy(List<Integer> cardsToStudy);
-
-	void updateGameState(Map<Integer, GameState> gameState);
+	void updateGameState(Integer card, GameState gameState);
 
 	String getUserGameStorePath();
 
