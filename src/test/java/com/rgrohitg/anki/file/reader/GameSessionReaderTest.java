@@ -14,9 +14,9 @@ import com.rgrohitg.anki.model.UserGame;
 @RunWith(BlockJUnit4ClassRunner.class)
 public class GameSessionReaderTest {
 
-	private static final String SUCCESS_FILE_PATH = "C:\\Users\\rgroh\\eclipse-workspace\\rgrohitg.anki\\data\\session_reader_user1.txt";
-	private static final String FAIL_FILE_PATH = "C:\\Users\\rgroh\\eclipse-workspace\\rgrohitg.anki\\data\\session_reader_wrong.data.txt";
-
+	private static final String SUCCESS_FILE_PATH = "data/session_reader_user1.txt";
+	private static final String FAIL_FILE_PATH = "data/session_reader_wrong.data.txt";
+	
 	@Test
 	public void givenListOfStrings_whenRead_UserGameObjectAreReturned() throws IOException {
 		GameSessionReader gameSession = new GameSessionReader(new InputStreamReader());
