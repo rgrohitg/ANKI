@@ -1,1 +1,6 @@
 language: java
+sudo:false
+addons:
+  sonarcloud:
+    organization: "rgrohitg-github"
+    token: $SONAR_TOKEN
