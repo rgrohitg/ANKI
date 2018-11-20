@@ -18,7 +18,7 @@ public class CardReaderTest {
 
 	private static final String EXPECTED_RESULT = "What enzyme breaks down sugars mouth and digestive tract?|Amylase";
 	private static final int THREE = 3;
-	private static final String FILE_PATH = "C:\\Users\\rgroh\\eclipse-workspace\\rgrohitg.anki\\src\\test\\resources\\Cards_1.txt";
+	private static final String FILE_PATH = "src/test/resources/Cards_1.txt";
 	private static final String INCORRECT_ILE_PATH = "src/test/resources/Cards_XYZ.txt";
 
 	@Test
