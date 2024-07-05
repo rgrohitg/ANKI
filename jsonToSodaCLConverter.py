@@ -63,54 +63,6 @@ def save_sodacl_checks_to_file(sodacl_checks, filename):
     with open(filename, 'w') as file:
         file.write(sodacl_checks)
 
-# Example usage
-json_input = '''
-[
-  {
-    "spec_name": "test new ",
-    "version": 1,
-    "spec_key": "spec_key1",
-    "updated_by": "X1234567",
-    "rowkey": "d2323sfasd-sadasd-fsafs/testing_new_db_v2/234923423/spec_key",
-    "created_by": "X1234567",
-    "status": "APPROVED",
-    "is_active": "Y",
-    "details": {
-      "spec_description": "test new",
-      "sheets": [
-        {
-          "job_name": "SOME JOB NAME",
-          "uniqueTuple": [
-            "Col1"
-          ],
-          "columns": [
-            {
-              "source_col_type": "text",
-              "dest_col_name": "col_1",
-              "source_col_name": "Col1",
-              "dest_col_type": "text",
-              "is_required": "Y",
-              "valid_regex": ".*"
-            },
-            {
-              "source_col_type": "decimal",
-              "dest_col_name": "col_2",
-              "source_col_name": "Col2",
-              "dest_col_type": "decimal",
-              "is_required": "Y",
-              "valid_regex": ".*"
-            }
-          ],
-          "start_row_idx": "1",
-          "header_row_idx": "0",
-          "sheet_name": "Sheet1",
-          "table_name": "some_schema.some_table_name"
-        }
-      ]
-    }
-  }
-]
-'''
 
 # Load JSON input
 json_data = json.loads(json_input)
