@@ -1,0 +1,37 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+import requests
+
+# Configure Selenium
+chrome_options = Options()
+chrome_options.add_argument("--headless")  # Run headless browser
+service = Service('/path/to/chromedriver')  # Ensure you have the correct path to chromedriver
+
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
+# Navigate to the Bitbucket login page
+driver.get('https://your_bitbucket_cluster_url/login')
+
+# Automate login (this depends on your specific SAML login page)
+# driver.find_element(By.ID, "username").send_keys("your_username")
+# driver.find_element(By.ID, "password").send_keys("your_password")
+# driver.find_element(By.ID, "login-submit").click()
+
+# Wait for the authentication and redirection
+driver.implicitly_wait(10)  # Adjust time as needed
+
+# Extract cookies after successful login
+cookies = driver.get_cookies()
+
+# Convert cookies to requests format
+session_cookies = {cookie['name']: cookie['value'] for cookie in cookies}
+
+# Use cookies to make API request
+response = requests.get('https://your_bitbucket_cluster_url/rest/api/1.0/projects/your_project_name/repos/your_repo_name/pull-requests', cookies=session_cookies)
+
+print(response.json())  # or handle the response as needed
+
+# Clean up
+driver.quit()
