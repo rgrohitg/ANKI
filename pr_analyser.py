@@ -23,11 +23,24 @@ class BitbucketPRAnalyzer:
             'fromDate': since_str
         }
         
+        # Print the URL and parameters being used for the request
+        print(f"Request URL: {self.base_url}")
+        print(f"Request Params: {params}")
+
         response = requests.get(self.base_url, headers=self.headers, params=params)
-        response.raise_for_status()
-        
+
+        # Print the status code to ensure it's 200 OK
+        print(f"Response Status Code: {response.status_code}")
+
+        if response.status_code != 200:
+            print(f"Error: Received status code {response.status_code}")
+            print(f"Response Text: {response.text}")
+            return []
+
         try:
             pr_data = response.json()
+            # Print the raw JSON data for inspection
+            print(f"Raw PR Data: {json.dumps(pr_data, indent=4)}")
             return pr_data.get('values', [])
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON response: {e}")
@@ -101,7 +114,7 @@ if __name__ == "__main__":
     bitbucket_cluster_url = "https://your_bitbucket_cluster_url"  # Your Bitbucket Cluster URL
     project_name = "your_project_name"  # Your Project Name
     repo_name = "your_repo_name"  # Your Repository Name
-    days = 7  # You can set this to 7, 10, 30, etc.
+    days = 100  # You can set this to 7, 10, 30, etc.
     output_format = "json"  # Can be 'csv' or 'json'
     output_file = f"bitbucket_pr_analysis.{output_format}"
 
