@@ -1,37 +1,154 @@
+import requests
+from datetime import datetime, timedelta
+import csv
+import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-import requests
 
-# Configure Selenium
-chrome_options = Options()
-chrome_options.add_argument("--headless")  # Run headless browser
-service = Service('/path/to/chromedriver')  # Ensure you have the correct path to chromedriver
+class BitbucketPRAnalyzer:
+    def __init__(self, bitbucket_cluster_url, project_name, repo_name, username, password, chromedriver_path):
+        self.bitbucket_cluster_url = bitbucket_cluster_url
+        self.project_name = project_name
+        self.repo_name = repo_name
+        self.username = username
+        self.password = password
+        self.chromedriver_path = chromedriver_path
+        self.base_url = f"{bitbucket_cluster_url}/projects/{project_name}/repos/{repo_name}/pull-requests"
+    
+    def _get_session_cookies(self):
+        # Configure Selenium for headless browsing
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        service = Service(self.chromedriver_path)
 
-driver = webdriver.Chrome(service=service, options=chrome_options)
+        # Start the Selenium driver
+        driver = webdriver.Chrome(service=service, options=chrome_options)
 
-# Navigate to the Bitbucket login page
-driver.get('https://your_bitbucket_cluster_url/login')
+        # Navigate to the Bitbucket login page
+        driver.get(f'{self.bitbucket_cluster_url}/login')
 
-# Automate login (this depends on your specific SAML login page)
-# driver.find_element(By.ID, "username").send_keys("your_username")
-# driver.find_element(By.ID, "password").send_keys("your_password")
-# driver.find_element(By.ID, "login-submit").click()
+        # Automate the login process (adjust these selectors to match your login page)
+        driver.find_element(By.ID, "username").send_keys(self.username)
+        driver.find_element(By.ID, "password").send_keys(self.password)
+        driver.find_element(By.ID, "login-submit").click()
 
-# Wait for the authentication and redirection
-driver.implicitly_wait(10)  # Adjust time as needed
+        # Wait for the authentication and redirection (adjust wait time if needed)
+        driver.implicitly_wait(10)
 
-# Extract cookies after successful login
-cookies = driver.get_cookies()
+        # Extract cookies after successful login
+        cookies = driver.get_cookies()
 
-# Convert cookies to requests format
-session_cookies = {cookie['name']: cookie['value'] for cookie in cookies}
+        # Convert cookies to requests format
+        session_cookies = {cookie['name']: cookie['value'] for cookie in cookies}
 
-# Use cookies to make API request
-response = requests.get('https://your_bitbucket_cluster_url/rest/api/1.0/projects/your_project_name/repos/your_repo_name/pull-requests', cookies=session_cookies)
+        # Clean up Selenium driver
+        driver.quit()
 
-print(response.json())  # or handle the response as needed
+        return session_cookies
+    
+    def fetch_pull_requests(self, days):
+        session_cookies = self._get_session_cookies()
 
-# Clean up
-driver.quit()
+        since_date = datetime.now() - timedelta(days=days)
+        since_str = since_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+        params = {
+            'state': 'ALL',  # Check all PRs: open, merged, declined, etc.
+            'fromDate': since_str
+        }
+        
+        # Make the request with the session cookies
+        response = requests.get(self.base_url, cookies=session_cookies, params=params)
+
+        if response.status_code != 200:
+            print(f"Error: Received status code {response.status_code}")
+            print(f"Response Text: {response.text}")
+            return []
+
+        try:
+            pr_data = response.json()
+            return pr_data.get('values', [])
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON response: {e}")
+            return []
+
+    def analyze_pull_requests(self, days):
+        prs = self.fetch_pull_requests(days)
+        if not prs:
+            return None
+
+        fast_approved = 0
+        no_comments = 0
+        needs_work = 0
+        declined = 0
+        total_comments = 0
+
+        for pr in prs:
+            created_on = datetime.strptime(pr['createdDate'], '%Y-%m-%dT%H:%M:%S.%f%z')
+            updated_on = datetime.strptime(pr['updatedDate'], '%Y-%m-%dT%H:%M:%S.%f%z')
+
+            if pr['state'] == 'MERGED' and (updated_on - created_on).total_seconds() <= 1800:
+                fast_approved += 1
+
+            if pr['commentCount'] == 0:
+                no_comments += 1
+
+            if pr['state'] == 'OPEN' and any(participant['role'] == 'REVIEWER' and not participant.get('approved', True) for participant in pr['reviewers']):
+                needs_work += 1
+
+            if pr['state'] == 'DECLINED':
+                declined += 1
+
+            total_comments += pr['commentCount']
+
+        pr_count = len(prs)
+        
+        return {
+            "project_name": self.project_name,
+            "repo_name": self.repo_name,
+            "duration_days": days,
+            "total_prs": pr_count,
+            "fast_approved": fast_approved,
+            "no_comments": no_comments,
+            "needs_work": needs_work,
+            "declined": declined,
+            "total_comments": total_comments,
+            "fast_approved_pct": (fast_approved / pr_count) * 100 if pr_count > 0 else 0,
+            "no_comments_pct": (no_comments / pr_count) * 100 if pr_count > 0 else 0,
+            "needs_work_pct": (needs_work / pr_count) * 100 if pr_count > 0 else 0,
+            "declined_pct": (declined / pr_count) * 100 if pr_count > 0 else 0
+        }
+
+    def output_to_csv(self, results, output_file):
+        with open(output_file, mode='w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=results.keys())
+            writer.writeheader()
+            writer.writerow(results)
+
+    def output_to_json(self, results, output_file):
+        with open(output_file, mode='w') as file:
+            json.dump(results, file, indent=4)
+
+if __name__ == "__main__":
+    bitbucket_cluster_url = "https://your_bitbucket_cluster_url"  # Your Bitbucket Cluster URL
+    project_name = "your_project_name"  # Your Project Name
+    repo_name = "your_repo_name"  # Your Repository Name
+    username = "your_username"  # Your SAML Username
+    password = "your_password"  # Your SAML Password
+    chromedriver_path = "/path/to/chromedriver"  # Path to your ChromeDriver
+    days = 100  # You can set this to 7, 10, 30, etc.
+    output_format = "json"  # Can be 'csv' or 'json'
+    output_file = f"bitbucket_pr_analysis.{output_format}"
+
+    analyzer = BitbucketPRAnalyzer(bitbucket_cluster_url, project_name, repo_name, username, password, chromedriver_path)
+    results = analyzer.analyze_pull_requests(days)
+    
+    if results:
+        if output_format == "csv":
+            analyzer.output_to_csv(results, output_file)
+        elif output_format == "json":
+            analyzer.output_to_json(results, output_file)
+        print(f"Results have been saved to {output_file}.")
+    else:
+        print(f"No PRs found in the last {days} days for the repository '{repo_name}'.")
