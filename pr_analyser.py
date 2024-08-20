@@ -4,27 +4,34 @@ import csv
 import json
 
 class BitbucketPRAnalyzer:
-    def __init__(self, bitbucket_access_key, workspace, repo_slug, project_name):
+    def __init__(self, bitbucket_access_key, bitbucket_cluster_url, project_name, repo_name):
         self.bitbucket_access_key = bitbucket_access_key
-        self.workspace = workspace
-        self.repo_slug = repo_slug
+        self.bitbucket_cluster_url = bitbucket_cluster_url
         self.project_name = project_name
-        self.base_url = f"https://api.bitbucket.org/2.0/repositories/{workspace}/{repo_slug}/pullrequests"
+        self.repo_name = repo_name
+        self.base_url = f"{bitbucket_cluster_url}/projects/{project_name}/repos/{repo_name}/pull-requests"
         self.headers = {
-            'Authorization': f'Bearer {self.bitbucket_access_key}'
+            'Authorization': f'Bearer {self.bitbucket_access_key}',
+            'Content-Type': 'application/json'
         }
     
     def fetch_pull_requests(self, days):
         since_date = datetime.now() - timedelta(days=days)
-        since_str = since_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        since_str = since_date.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
         params = {
-            'state': 'ALL',  # We want to check all PRs, including open, merged, declined, etc.
-            'q': f'updated_on >= {since_str}'
+            'state': 'ALL',  # Check all PRs: open, merged, declined, etc.
+            'fromDate': since_str
         }
         
         response = requests.get(self.base_url, headers=self.headers, params=params)
         response.raise_for_status()
-        return response.json()['values']
+        
+        try:
+            pr_data = response.json()
+            return pr_data.get('values', [])
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON response: {e}")
+            return []
     
     def analyze_pull_requests(self, days):
         prs = self.fetch_pull_requests(days)
@@ -38,16 +45,19 @@ class BitbucketPRAnalyzer:
         total_comments = 0
 
         for pr in prs:
-            # Check if PR was approved quickly (let's say within 30 minutes)
-            if pr['state'] == 'MERGED' and pr['created_on'] == pr['updated_on']:
+            # Check if PR was approved quickly (within 30 minutes)
+            created_on = datetime.strptime(pr['createdDate'], '%Y-%m-%dT%H:%M:%S.%f%z')
+            updated_on = datetime.strptime(pr['updatedDate'], '%Y-%m-%dT%H:%M:%S.%f%z')
+
+            if pr['state'] == 'MERGED' and (updated_on - created_on).total_seconds() <= 1800:
                 fast_approved += 1
 
             # Check if PR has no comments
-            if pr['comment_count'] == 0:
+            if pr['commentCount'] == 0:
                 no_comments += 1
 
             # Check if PR has the "needs work" status
-            if pr['state'] == 'OPEN' and any(participant['role'] == 'REVIEWER' and participant['approved'] is False for participant in pr['participants']):
+            if pr['state'] == 'OPEN' and any(participant['role'] == 'REVIEWER' and not participant.get('approved', True) for participant in pr['reviewers']):
                 needs_work += 1
 
             # Check if PR was declined
@@ -55,14 +65,14 @@ class BitbucketPRAnalyzer:
                 declined += 1
 
             # Accumulate total comments
-            total_comments += pr['comment_count']
+            total_comments += pr['commentCount']
 
         pr_count = len(prs)
         
         # Calculating percentages
         return {
             "project_name": self.project_name,
-            "repo_name": self.repo_slug,
+            "repo_name": self.repo_name,
             "duration_days": days,
             "total_prs": pr_count,
             "fast_approved": fast_approved,
@@ -88,14 +98,14 @@ class BitbucketPRAnalyzer:
 
 if __name__ == "__main__":
     bitbucket_access_key = "your_bitbucket_access_key"  # Your Bitbucket Access Key
-    workspace = "your_workspace"  # Your Bitbucket Workspace
-    repo_slug = "your_repo_slug"  # Your Repository Slug
+    bitbucket_cluster_url = "https://your_bitbucket_cluster_url"  # Your Bitbucket Cluster URL
     project_name = "your_project_name"  # Your Project Name
+    repo_name = "your_repo_name"  # Your Repository Name
     days = 7  # You can set this to 7, 10, 30, etc.
     output_format = "json"  # Can be 'csv' or 'json'
     output_file = f"bitbucket_pr_analysis.{output_format}"
 
-    analyzer = BitbucketPRAnalyzer(bitbucket_access_key, workspace, repo_slug, project_name)
+    analyzer = BitbucketPRAnalyzer(bitbucket_access_key, bitbucket_cluster_url, project_name, repo_name)
     results = analyzer.analyze_pull_requests(days)
     
     if results:
@@ -105,4 +115,4 @@ if __name__ == "__main__":
             analyzer.output_to_json(results, output_file)
         print(f"Results have been saved to {output_file}.")
     else:
-        print(f"No PRs found in the last {days} days for the repository '{repo_slug}'.")
+        print(f"No PRs found in the last {days} days for the repository '{repo_name}'.")
