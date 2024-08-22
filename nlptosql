@@ -1,0 +1,69 @@
+import openai  # Import the openai module
+import requests
+import sys
+
+print("Python version:", sys.version)
+print("OpenAI version:", openai.__version__)
+
+# Set your OpenAI API key
+client = openai.OpenAI(api_key='')  # Use the openai.OpenAI class
+
+# Function to parse the user's natural language query
+def parse_query(query):
+    print(f"Parsing query: {query}")
+    response = client.chat.completions.create(  # Updated call
+        model="gpt-4o-mini",  # or "gpt-4" if you have access to it
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": f"Extract intent and key entities from the following query: {query}"}
+        ]
+    )
+    parsed_query = response.choices[0].message.content.strip()  # Updated access
+    print(f"Parsed query: {parsed_query}")
+    return parsed_query
+
+# Function to map parsed query to Cube.js query format
+def map_to_cubejs(parsed_query):
+    print(f"Mapping parsed query to Cube.js format: {parsed_query}")
+    if "number of users" in parsed_query and "last month" in parsed_query:
+        cubejs_query = {
+            "measures": ["Users.count"],
+            "timeDimensions": [{
+                "dimension": "Users.createdAt",
+                "dateRange": "Last month"
+            }]
+        }
+        print(f"Cube.js query: {cubejs_query}")
+        return cubejs_query
+    print("No matching Cube.js query found")
+    return None
+
+# Function to send the Cube.js query and get the SQL
+def get_sql_from_cubejs(query):
+    print("Sending request to Cube.js to get the SQL")
+    CUBEJS_API_URL = "http://localhost:4000/cubejs-api/v1/sql"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "YOUR_CUBEJS_API_TOKEN"  # If required
+    }
+    response = requests.post(CUBEJS_API_URL, json={"query": query}, headers=headers)
+    sql_response = response.json()
+    print(f"SQL response: {sql_response}")
+    return sql_response['sql']
+
+# Main function to process the query
+def process_nlp_query(user_query):
+    print("Starting NLP to SQL processing")
+    parsed_query = parse_query(user_query)
+    cubejs_query = map_to_cubejs(parsed_query)
+    if not cubejs_query:
+        print("Could not map the query to a Cube.js format")
+        return "Could not map query"
+    sql_query = get_sql_from_cubejs(cubejs_query)
+    print(f"Generated SQL query: {sql_query}")
+    return sql_query
+
+# Example usage
+if __name__ == "__main__":
+    result = process_nlp_query("Show me the number of users registered last month")
+    print(f"Final SQL query: {result}")
