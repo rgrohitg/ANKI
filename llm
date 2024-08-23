@@ -1,0 +1,366 @@
+
+(prism_api) (base) rohit@MacBook-Pro prism_api % python nlp_to_sql.py
+Python version: 3.11.5 (v3.11.5:cce6ba91b3, Aug 24 2023, 10:50:31) [Clang 13.0.0 (clang-1300.0.29.30)]
+OpenAI version: 1.42.0
+Processing query: How many users have placed orders?.
+Starting NLP to SQL processing
+Loaded Cube.js models: {
+    "OrderItems": {
+        "measures": [
+            {
+                "name": "OrderItems.orderItemCount",
+                "type": "number",
+                "description": "The total number of items across all orders."
+            },
+            {
+                "name": "OrderItems.totalItemQuantity",
+                "type": "number",
+                "description": "The total quantity of all items ordered."
+            },
+            {
+                "name": "OrderItems.totalItemValue",
+                "type": "number",
+                "description": "The total value of each item calculated by multiplying the price by the quantity ordered."
+            },
+            {
+                "name": "OrderItems.sumPrice",
+                "type": "number",
+                "description": "The  value of each item."
+            }
+        ],
+        "dimensions": [
+            {
+                "name": "OrderItems.orderItemId",
+                "type": "number",
+                "description": "The unique identifier for each order item.",
+                "values": []
+            },
+            {
+                "name": "OrderItems.orderId",
+                "type": "number",
+                "description": "The ID of the order to which this item belongs.",
+                "values": []
+            },
+            {
+                "name": "OrderItems.productId",
+                "type": "number",
+                "description": "The ID of the product that was ordered.",
+                "values": []
+            },
+            {
+                "name": "OrderItems.itemPrice",
+                "type": "number",
+                "description": "The price of the product at the time of the order.",
+                "values": []
+            },
+            {
+                "name": "OrderItems.itemQuantity",
+                "type": "number",
+                "description": "The number of units of the product ordered.",
+                "values": []
+            }
+        ],
+        "timeDimensions": []
+    },
+    "Orders": {
+        "measures": [
+            {
+                "name": "Orders.orderCount",
+                "type": "number",
+                "description": "The total number of orders placed."
+            },
+            {
+                "name": "Orders.totalOrderAmount",
+                "type": "number",
+                "description": "The total revenue generated from all orders."
+            },
+            {
+                "name": "Orders.averageOrderValue",
+                "type": "number",
+                "description": "The average value of an order."
+            }
+        ],
+        "dimensions": [
+            {
+                "name": "Orders.orderId",
+                "type": "number",
+                "description": "The unique identifier for each order.",
+                "values": []
+            },
+            {
+                "name": "Orders.user_id",
+                "type": "number",
+                "description": "The Orders User Id.",
+                "values": []
+            },
+            {
+                "name": "Orders.orderStatus",
+                "type": "string",
+                "description": "The current status of the order (e.g., 'completed', 'pending', 'cancelled').",
+                "values": []
+            },
+            {
+                "name": "Orders.orderCreatedAt",
+                "type": "time",
+                "description": "The date and time when the order was placed.",
+                "values": []
+            }
+        ],
+        "timeDimensions": [
+            "Orders.orderCreatedAt"
+        ]
+    },
+    "Products": {
+        "measures": [
+            {
+                "name": "Products.productCount",
+                "type": "number",
+                "description": "The total number of products."
+            },
+            {
+                "name": "Products.totalStockValue",
+                "type": "number",
+                "description": "The total stock value calculated by multiplying the price by the stock quantity of each product."
+            },
+            {
+                "name": "Products.averageProductPrice",
+                "type": "number",
+                "description": "The average price of all products."
+            }
+        ],
+        "dimensions": [
+            {
+                "name": "Products.productId",
+                "type": "number",
+                "description": "The unique identifier for each product.",
+                "values": []
+            },
+            {
+                "name": "Products.productName",
+                "type": "string",
+                "description": "The name of the product.",
+                "values": []
+            },
+            {
+                "name": "Products.productCategory",
+                "type": "string",
+                "description": "The category to which the product belongs.",
+                "values": []
+            },
+            {
+                "name": "Products.productPrice",
+                "type": "number",
+                "description": "The price of the product.",
+                "values": []
+            },
+            {
+                "name": "Products.stockQuantity",
+                "type": "number",
+                "description": "The number of units available in stock for the product.",
+                "values": []
+            },
+            {
+                "name": "Products.productCreatedAt",
+                "type": "time",
+                "description": "The date and time when the product was added to the store.",
+                "values": []
+            }
+        ],
+        "timeDimensions": [
+            "Products.productCreatedAt"
+        ]
+    },
+    "Users": {
+        "measures": [],
+        "dimensions": [
+            {
+                "name": "Users.userId",
+                "type": "number",
+                "description": "The unique identifier for each user.",
+                "values": []
+            },
+            {
+                "name": "Users.userName",
+                "type": "string",
+                "description": "The name of the user.",
+                "values": []
+            },
+            {
+                "name": "Users.userEmail",
+                "type": "string",
+                "description": "The email address of the user.",
+                "values": []
+            },
+            {
+                "name": "Users.userStatus",
+                "type": "string",
+                "description": "The status of the user's account (e.g., 'active', 'inactive').",
+                "values": []
+            },
+            {
+                "name": "Users.userCreatedAt",
+                "type": "time",
+                "description": "The date and time when the user registered on the platform.",
+                "values": []
+            }
+        ],
+        "timeDimensions": [
+            "Users.userCreatedAt"
+        ]
+    }
+}
+Loaded Cube.js views: {
+    "customers_view": {
+        "measures": [
+            {
+                "name": "customers_view.orderCount",
+                "type": "number",
+                "description": "The total number of orders placed."
+            },
+            {
+                "name": "customers_view.OrderItems_orderItemCount",
+                "type": "number",
+                "description": "The total number of items across all orders."
+            },
+            {
+                "name": "customers_view.OrderItems_totalItemValue",
+                "type": "number",
+                "description": "The total value of each item calculated by multiplying the price by the quantity ordered."
+            },
+            {
+                "name": "customers_view.OrderItems_sumPrice",
+                "type": "number",
+                "description": "The  value of each item."
+            }
+        ],
+        "dimensions": [
+            {
+                "name": "customers_view.Users_userId",
+                "type": "number",
+                "description": "The unique identifier for each user.",
+                "values": []
+            },
+            {
+                "name": "customers_view.Users_userName",
+                "type": "string",
+                "description": "The name of the user.",
+                "values": []
+            },
+            {
+                "name": "customers_view.Users_userEmail",
+                "type": "string",
+                "description": "The email address of the user.",
+                "values": []
+            },
+            {
+                "name": "customers_view.Users_userStatus",
+                "type": "string",
+                "description": "The status of the user's account (e.g., 'active', 'inactive').",
+                "values": []
+            },
+            {
+                "name": "customers_view.Users_userCreatedAt",
+                "type": "time",
+                "description": "The date and time when the user registered on the platform.",
+                "values": []
+            }
+        ],
+        "timeDimensions": [
+            "customers_view.Users_userCreatedAt"
+        ]
+    },
+    "ecom_view": {
+        "measures": [
+            {
+                "name": "ecom_view.orderCount",
+                "type": "number",
+                "description": "The total number of orders placed."
+            },
+            {
+                "name": "ecom_view.totalOrderAmount",
+                "type": "number",
+                "description": "The total revenue generated from all orders."
+            },
+            {
+                "name": "ecom_view.averageOrderValue",
+                "type": "number",
+                "description": "The average value of an order."
+            }
+        ],
+        "dimensions": [
+            {
+                "name": "ecom_view.orderId",
+                "type": "number",
+                "description": "The unique identifier for each order.",
+                "values": []
+            },
+            {
+                "name": "ecom_view.user_id",
+                "type": "number",
+                "description": "The Orders User Id.",
+                "values": []
+            },
+            {
+                "name": "ecom_view.orderStatus",
+                "type": "string",
+                "description": "The current status of the order (e.g., 'completed', 'pending', 'cancelled').",
+                "values": []
+            },
+            {
+                "name": "ecom_view.orderCreatedAt",
+                "type": "time",
+                "description": "The date and time when the order was placed.",
+                "values": []
+            },
+            {
+                "name": "ecom_view.userId",
+                "type": "number",
+                "description": "The unique identifier for each user.",
+                "values": []
+            },
+            {
+                "name": "ecom_view.userName",
+                "type": "string",
+                "description": "The name of the user.",
+                "values": []
+            },
+            {
+                "name": "ecom_view.userEmail",
+                "type": "string",
+                "description": "The email address of the user.",
+                "values": []
+            },
+            {
+                "name": "ecom_view.userStatus",
+                "type": "string",
+                "description": "The status of the user's account (e.g., 'active', 'inactive').",
+                "values": []
+            },
+            {
+                "name": "ecom_view.userCreatedAt",
+                "type": "time",
+                "description": "The date and time when the user registered on the platform.",
+                "values": []
+            }
+        ],
+        "timeDimensions": [
+            "ecom_view.orderCreatedAt",
+            "ecom_view.userCreatedAt"
+        ]
+    }
+}
+Parsing query and generating Cube.js query: How many users have placed orders?.
+Generated Cube.js query: {
+    "order": {
+        "Orders.orderCount": "desc"
+    },
+    "measures": ["Orders.orderCount"],
+    "dimensions": ["Orders.user_id"],
+    "timeDimensions": []
+}
+Sending request to Cube.js to get the SQL
+SQL response: {'sql': {'external': False, 'sql': ['SELECT\n      "orders".user_id "orders__user_id", count("orders".id) "orders__order_count"\n    FROM\n      orders AS "orders"  GROUP BY 1 ORDER BY 2 DESC LIMIT 10000', []], 'lambdaQueries': {}, 'order': {'Orders.orderCount': 'desc'}, 'cacheKeyQueries': [['SELECT FLOOR((UNIX_TIMESTAMP()) / 10) as refresh_key', [], {'external': True, 'renewalThreshold': 10}]], 'preAggregations': [], 'dataSource': 'default', 'aliasNameToMember': {'orders__order_count': 'Orders.orderCount', 'orders__user_id': 'Orders.user_id'}, 'rollupMatchResults': [], 'canUseTransformedQuery': {'sortedDimensions': ['Orders.user_id'], 'sortedTimeDimensions': [], 'timeDimensions': [], 'measures': ['Orders.orderCount'], 'leafMeasureAdditive': True, 'leafMeasures': ['Orders.orderCount'], 'measureToLeafMeasures': {'Orders.orderCount': [{'measure': 'Orders.orderCount', 'additive': True, 'type': 'count'}]}, 'hasNoTimeDimensionsWithoutGranularity': True, 'allFiltersWithinSelectedDimensions': True, 'isAdditive': True, 'granularityHierarchies': {'year': ['year', 'quarter', 'month', 'month', 'day', 'hour', 'minute', 'second'], 'quarter': ['quarter', 'month', 'day', 'hour', 'minute', 'second'], 'month': ['month', 'day', 'hour', 'minute', 'second'], 'week': ['week', 'day', 'hour', 'minute', 'second'], 'day': ['day', 'hour', 'minute', 'second'], 'hour': ['hour', 'minute', 'second'], 'minute': ['minute', 'second'], 'second': ['second']}, 'hasMultipliedMeasures': False, 'hasCumulativeMeasures': False, 'windowGranularity': None, 'filterDimensionsSingleValueEqual': {}, 'ownedDimensions': ['Orders.user_id'], 'ownedTimeDimensionsWithRollupGranularity': [], 'ownedTimeDimensionsAsIs': [], 'allBackAliasMembers': {}, 'hasPostAggregate': False}, 'memberNames': ['Orders.orderCount', 'Orders.user_id']}}
+Generated SQL query: {'external': False, 'sql': ['SELECT\n      "orders".user_id "orders__user_id", count("orders".id) "orders__order_count"\n    FROM\n      orders AS "orders"  GROUP BY 1 ORDER BY 2 DESC LIMIT 10000', []], 'lambdaQueries': {}, 'order': {'Orders.orderCount': 'desc'}, 'cacheKeyQueries': [['SELECT FLOOR((UNIX_TIMESTAMP()) / 10) as refresh_key', [], {'external': True, 'renewalThreshold': 10}]], 'preAggregations': [], 'dataSource': 'default', 'aliasNameToMember': {'orders__order_count': 'Orders.orderCount', 'orders__user_id': 'Orders.user_id'}, 'rollupMatchResults': [], 'canUseTransformedQuery': {'sortedDimensions': ['Orders.user_id'], 'sortedTimeDimensions': [], 'timeDimensions': [], 'measures': ['Orders.orderCount'], 'leafMeasureAdditive': True, 'leafMeasures': ['Orders.orderCount'], 'measureToLeafMeasures': {'Orders.orderCount': [{'measure': 'Orders.orderCount', 'additive': True, 'type': 'count'}]}, 'hasNoTimeDimensionsWithoutGranularity': True, 'allFiltersWithinSelectedDimensions': True, 'isAdditive': True, 'granularityHierarchies': {'year': ['year', 'quarter', 'month', 'month', 'day', 'hour', 'minute', 'second'], 'quarter': ['quarter', 'month', 'day', 'hour', 'minute', 'second'], 'month': ['month', 'day', 'hour', 'minute', 'second'], 'week': ['week', 'day', 'hour', 'minute', 'second'], 'day': ['day', 'hour', 'minute', 'second'], 'hour': ['hour', 'minute', 'second'], 'minute': ['minute', 'second'], 'second': ['second']}, 'hasMultipliedMeasures': False, 'hasCumulativeMeasures': False, 'windowGranularity': None, 'filterDimensionsSingleValueEqual': {}, 'ownedDimensions': ['Orders.user_id'], 'ownedTimeDimensionsWithRollupGranularity': [], 'ownedTimeDimensionsAsIs': [], 'allBackAliasMembers': {}, 'hasPostAggregate': False}, 'memberNames': ['Orders.orderCount', 'Orders.user_id']}
+Results written to nlp_query_results.txt
+(prism_api) (base) rohit@MacBook-Pro prism_api % 
+
