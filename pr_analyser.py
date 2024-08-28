@@ -43,3 +43,55 @@ def update_knowledge_base_endpoint():
         return jsonify({"error": e.errors()}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+
+
+from pydantic import BaseModel
+
+class QueryRequest(BaseModel):
+    query: str
+
+class QueryResponse(BaseModel):
+    category: str
+    response: dict
+
+class UpdateKnowledgeBaseRequest(BaseModel):
+    keywords: dict  # {"keyword1": "structured", "keyword2": "unstructured"}
+
+
+
+import requests
+from config import STRUCTURED_API_URL
+
+def route_structured_query(query: str) -> dict:
+    try:
+        response = requests.post(f"{STRUCTURED_API_URL}/structured-endpoint", json={"query": query})
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
+
+
+
+knowledge_base = {
+    "get": "structured",
+    "list": "unstructured",
+    "find": "structured",
+}
+
+def update_knowledge_base(new_keywords: dict):
+    global knowledge_base
+    knowledge_base.update(new_keywords)
+
+
+from app.knowledge_base import knowledge_base
+
+def classify_query(query: str) -> str:
+    for keyword, category in knowledge_base.items():
+        if keyword in query.lower():
+            return category
+    return "unstructured"  # Default category
+
+
