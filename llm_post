@@ -73,3 +73,87 @@ Conclusion
 Both approaches have their merits and can be effective depending on your specific use case. The key is to balance the need for flexibility, consistency, and scalability within your organization. For smaller teams or simpler data environments, feeding metadata directly to an LLM might be the most efficient approach. However, for larger, more complex environments, Cube.js’s semantic layer offers critical benefits in terms of governance, consistency, and long-term scalability.
 
 Ultimately, the choice depends on your organization's specific needs, resources, and long-term goals. Understanding the trade-offs and benefits of each approach will help you make an informed decision that supports your data strategy now and in the future.
+
+
+Adding Context Based on User Query
+When demonstrating the usage of Cube.js views, you can dynamically decide which view to expose depending on the query's context. Here's how you can explain it in your demo:
+
+1. When the Query Involves Only Orders and Users
+Example User Query: "Show me all orders placed by users in the last month."
+
+In this case, you can restrict the context by using the ecom_view, which contains only relevant data about orders and users, without including unnecessary data like products or order items.
+
+Shared View: ecom_view
+
+Why: Since the query only asks about orders and users, using the ecom_view keeps things efficient and avoids providing unnecessary data, such as product details.
+
+Example Query using ecom_view:
+
+sql
+Copy code
+SELECT 
+  Orders.id AS orderId,
+  Users.name AS userName,
+  Orders.status AS orderStatus,
+  Orders.created_at AS orderDate
+FROM Orders
+JOIN Users ON Orders.user_id = Users.id
+WHERE Orders.created_at >= NOW() - INTERVAL 1 MONTH;
+2. When the Query Involves Products
+Example User Query: "Show me all users who purchased products from the electronics category last month."
+
+In this case, you'll need to expose more data, so using the customers_view is more appropriate. This view not only includes orders and users but also the necessary products and order items information.
+
+Shared View: customers_view
+
+Why: The query includes products, so providing the customers_view ensures all relevant relationships between users, orders, and products are available.
+
+Example Query using customers_view:
+
+sql
+Copy code
+SELECT 
+  Users.name AS userName,
+  Orders.id AS orderId,
+  Products.name AS productName,
+  OrderItems.quantity AS quantity,
+  Orders.created_at AS orderDate
+FROM Orders
+JOIN Users ON Orders.user_id = Users.id
+JOIN OrderItems ON Orders.id = OrderItems.order_id
+JOIN Products ON OrderItems.product_id = Products.id
+WHERE Products.category = 'electronics'
+AND Orders.created_at >= NOW() - INTERVAL 1 MONTH;
+
+
++--------------------+        +--------------------+        +---------------------+
+|      Users         |        |      Orders        |        |      Products        |
+|--------------------|        |--------------------|        |---------------------|
+| userId (PK)        |<------>| user_id (FK)       |        | productId (PK)       |
+| userName           |        | orderId (PK)       |        | productName          |
+| userEmail          |        | orderStatus        |        | productCategory      |
+| userStatus         |        | orderCreatedAt     |        | productPrice         |
+| userCreatedAt      |        | totalOrderAmount   |        | stockQuantity        |
++--------------------+        +--------------------+        +---------------------+
+                                    ^                        
+                                    |                        
+                                    |                        
+                           +--------------------+            
+                           |    Order Items     |<----------> +---------------------+
+                           |--------------------|            |      Products        |
+                           | orderItemId (PK)   |            |---------------------|
+                           | orderId (FK)       |            | productId (FK)       |
+                           | productId (FK)     |            | productName          |
+                           | itemPrice          |            | productCategory      |
+                           | itemQuantity       |            | productPrice         |
+                           +--------------------+            | stockQuantity        |
+                                                             +---------------------+
+
++--------------------+        +--------------------+
+|    ecom_view       |        |   customers_view   |
+|--------------------|        |--------------------|
+| Includes:          |        | Includes:          |
+| Orders, Users      |        | Orders, Users,     |
+| (excludes company) |        | Order Items,       |
+|                    |        | Products           |
++--------------------+        +--------------------+
