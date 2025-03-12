@@ -1,0 +1,226 @@
+To address your query, I’ll provide a complete solution that modifies the code to load DuckDB extensions from profile-specific folders within the `extensions/` directory. Specifically, extensions for the **local** profile (Windows) will be loaded from `extensions/local/`, and extensions for the **aws** profile (AWS/Linux) will be loaded from `extensions/aws/`. This ensures that the correct extensions are used based on the environment, as extensions differ between Windows and AWS.
+
+Below is the complete updated code, including the project structure and the relevant files.
+
+---
+
+## Updated Project Structure
+
+The project structure now includes two subdirectories under `extensions/` for profile-specific extensions:
+
+```
+delta_duckdb_api/
+├── src/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── db.py
+│   ├── delta_loader.py
+│   ├── routes.py
+│   └── main.py
+├── extensions/
+│   ├── local/              # Extensions for local (Windows) profile
+│   │   └── httpfs.duckdb_extension
+│   └── aws/                # Extensions for aws profile
+│       ├── aws.duckdb_extension
+│       └── httpfs.duckdb_extension
+├── .env
+├── requirements.txt
+└── Dockerfile
+```
+
+- **`extensions/local/`**: Contains extensions for the Windows environment (e.g., `httpfs.duckdb_extension` compiled for Windows).
+- **`extensions/aws/`**: Contains extensions for the AWS/Linux environment (e.g., `aws.duckdb_extension` and `httpfs.duckdb_extension` compiled for Linux).
+
+---
+
+## Updated Code
+
+Below are the complete implementations of the modified files: `src/config.py` and `src/db.py`. Other files (`delta_loader.py`, `routes.py`, `main.py`) are assumed to remain unchanged since they don’t directly interact with extension loading.
+
+### 1. `src/config.py`
+
+This file defines the `Config` class, which now sets the extensions directory based on the profile.
+
+```python
+import os
+import json
+from loguru import logger
+from typing import Dict, Optional
+import boto3
+
+class Config:
+    def __init__(self):
+        # Get the profile from environment variable, default to "local"
+        self.profile: str = os.environ.get("PROFILE", "local")
+        self.delta_tables: Optional[Dict[str, str]] = None
+        self.aws_session: Optional[boto3.Session] = None
+        self.aws_region: str = os.environ.get("AWS_REGION", "us-west-2")
+        # Set the extensions directory based on the profile
+        self.extensions_dir: str = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../extensions", self.profile)
+        )
+        self.load_from_env()
+
+    def load_from_env(self):
+        # Configure AWS settings if profile is "aws"
+        if self.profile == "aws":
+            aws_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+            aws_secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+            if not aws_access_key or not aws_secret_key:
+                logger.error("AWS credentials not found for 'aws' profile.")
+                raise ValueError("AWS credentials required for 'aws' profile.")
+            self.aws_session = boto3.Session(
+                aws_access_key_id=aws_access_key,
+                aws_secret_key=aws_secret_key,
+                region_name=self.aws_region
+            )
+            logger.info("Initialized boto3 session for AWS profile.")
+
+        # Load DELTA_TABLES from environment variable if present
+        delta_tables_env = os.environ.get("DELTA_TABLES")
+        if delta_tables_env:
+            try:
+                self.delta_tables = json.loads(delta_tables_env)
+                logger.info("Loaded DELTA_TABLES from environment: {tables}", tables=self.delta_tables)
+            except json.JSONDecodeError:
+                logger.error("Invalid JSON in DELTA_TABLES environment variable.")
+                self.delta_tables = {}
+        else:
+            self.delta_tables = {}
+            logger.info("No DELTA_TABLES environment variable found; tables can be loaded via API.")
+
+# Instantiate the config object
+config = Config()
+```
+
+**Key Changes:**
+- `self.extensions_dir` is dynamically set to `extensions/local/` or `extensions/aws/` based on the `PROFILE` environment variable.
+- The path is computed relative to the `config.py` file’s location using `os.path.dirname(__file__)`.
+
+---
+
+### 2. `src/db.py`
+
+This file manages the DuckDB connection and loads extensions from the profile-specific folder.
+
+```python
+import threading
+import duckdb
+from loguru import logger
+from src.config import config
+import os
+
+# Thread-local storage for connections
+thread_local = threading.local()
+
+def get_duckdb_connection():
+    # Create a new connection if one doesn’t exist for this thread
+    if not hasattr(thread_local, "connection"):
+        con = duckdb.connect(database=':memory:')
+
+        # Load the httpfs extension (required for both profiles)
+        httpfs_path = os.path.join(config.extensions_dir, "httpfs.duckdb_extension")
+        if not os.path.exists(httpfs_path):
+            logger.error("httpfs extension not found at {path}", path=httpfs_path)
+            raise FileNotFoundError(f"httpfs extension not found at {httpfs_path}")
+        con.install_extension(httpfs_path)
+        con.load_extension("httpfs")
+        logger.info("Loaded 'httpfs' extension from {path}", path=httpfs_path)
+
+        # Load the aws extension and configure credentials (only for aws profile)
+        if config.profile == "aws":
+            aws_path = os.path.join(config.extensions_dir, "aws.duckdb_extension")
+            if not os.path.exists(aws_path):
+                logger.error("aws extension not found at {path}", path=aws_path)
+                raise FileNotFoundError(f"aws extension not found at {aws_path}")
+            con.install_extension(aws_path)
+            con.load_extension("aws")
+            logger.info("Loaded 'aws' extension from {path}", path=aws_path)
+
+            # Configure AWS credentials in DuckDB
+            credentials = config.aws_session.get_credentials()
+            con.execute(f"SET s3_region='{config.aws_region}'")
+            con.execute(f"SET s3_access_key_id='{credentials.access_key}'")
+            con.execute(f"SET s3_secret_access_key='{credentials.secret_key}'")
+            if credentials.token:
+                con.execute(f"SET s3_session_token='{credentials.token}'")
+            logger.info("Set AWS credentials in DuckDB for S3 access.")
+
+        # Store the connection in thread-local storage
+        thread_local.connection = con
+        logger.debug("Created new DuckDB connection for thread {thread_id}", thread_id=threading.current_thread().ident)
+    
+    return thread_local.connection
+```
+
+**Key Changes:**
+- Extensions are loaded from `config.extensions_dir`, which points to the profile-specific folder.
+- The `httpfs` extension is loaded for both profiles from their respective directories.
+- The `aws` extension is loaded only for the `aws` profile, along with AWS credential configuration.
+
+---
+
+## Explanation
+
+1. **Profile-Specific Extension Loading**:
+   - The `extensions_dir` in `config.py` dynamically resolves to:
+     - `extensions/local/` for `PROFILE=local` (Windows).
+     - `extensions/aws/` for `PROFILE=aws` (AWS/Linux).
+   - This ensures that the correct platform-specific extensions are loaded.
+
+2. **Extension Details**:
+   - **Both Profiles**: Load `httpfs.duckdb_extension` for HTTP filesystem support.
+   - **AWS Profile Only**: Load `aws.duckdb_extension` and configure AWS credentials for S3 access.
+
+3. **Error Handling**:
+   - If an extension file is missing in the specified folder, the code raises a `FileNotFoundError` with a descriptive message.
+
+---
+
+## Usage Instructions
+
+1. **Place Extensions**:
+   - For **local (Windows)**:
+     - Place `httpfs.duckdb_extension` (Windows version) in `extensions/local/`.
+   - For **aws (Linux)**:
+     - Place `aws.duckdb_extension` and `httpfs.duckdb_extension` (Linux versions) in `extensions/aws/`.
+
+2. **Set Environment Variables**:
+   - **Local Profile**:
+     ```
+     PROFILE=local
+     ```
+   - **AWS Profile**:
+     ```
+     PROFILE=aws
+     AWS_ACCESS_KEY_ID=<your-access-key>
+     AWS_SECRET_ACCESS_KEY=<your-secret-key>
+     AWS_REGION=<your-region>  # e.g., us-west-2
+     ```
+
+3. **Run the Application**:
+   - Set the environment variables (e.g., via a `.env` file or command line).
+   - Start the application with `python src/main.py` (assuming `main.py` is the entry point).
+   - The application will load the correct extensions based on the `PROFILE` value.
+
+---
+
+## Dependencies
+
+Ensure the following are in your `requirements.txt`:
+
+```
+duckdb
+loguru
+boto3
+```
+
+Install them with:
+
+```
+pip install -r requirements.txt
+```
+
+---
+
+This solution provides a complete and flexible way to load profile-specific DuckDB extensions from separate folders, accommodating the differences between Windows and AWS environments. Let me know if you need further assistance!
