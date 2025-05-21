@@ -1,0 +1,76 @@
+
+
+
+Revised Prompt for LLM (With Org Structure and Configs)
+I want to build a DuckDB caching and query engine in Python using Flask, Streamlit, and optionally Arrow Flight.
+The system will:
+	•	Cache selected tables from Databricks into a local DuckDB file.  
+	•	Expose a Flask API to query this cache and trigger manual refresh.  
+	•	Provide a Streamlit UI to inspect cached tables, run queries, and monitor refresh status.  
+	•	Support optional Arrow Flight server for fast inter-service communication.  
+
+
+
+Important: My Project Layout
+
+Please generate code that fits this structure:
+duckdb-engine/
+├── src/
+│   ├── duckdb_engine/
+│   │   ├── __init__.py
+│   │   ├── app.py              # Flask app
+│   │   ├── db_sync.py          # DuckDB sync from Databricks
+│   │   ├── query_engine.py     # Query runner and validator
+│   │   ├── flight_server.py    # Optional Arrow Flight server
+│   │   └── ui/
+│   │       └── streamlit_app.py  # Streamlit frontend
+│   ├── duckdb_engine_config/
+│   │   ├── __init__.py
+│   │   ├── application-dev.yaml
+│   │   ├── application-test.yaml
+├── Dockerfile
+├── Makefile
+├── pyproject.toml
+├── poetry.toml
+├── run.py
+├── test_run.py
+├── tests/
+└── terraform/
+
+Environment Config (Spring Boot Style)
+	•	All configs (paths, DB credentials, table list, tokens, ports) should be loaded from YAML files like application-dev.yaml.  
+	•	My organization uses internal libraries to auto-inject YAML config values into Python modules.  
+	•	Avoid hardcoded values in code — use config placeholders and assume the config loader handles resolution.  
+
+
+
+Functional Requirements
+	1	DuckDB Caching Layer:  
+	◦	Connect to Databricks and cache selected tables in cache.duckdb.  
+	◦	Full overwrite on refresh.  
+	◦	Sync triggered via API (/refresh) or Streamlit UI button.  
+	2	Flask API:  
+	◦	GET /tables → list cached tables.  
+	◦	POST /query → run SQL queries (read-only).  
+	◦	POST /refresh → refresh cache from Databricks.  
+	◦	GET /cache-status → show last sync timestamps.  
+	3	Streamlit UI:  
+	◦	Show cached tables with metadata.  
+	◦	Preview table data.  
+	◦	Run SQL queries.  
+	◦	Trigger refresh.  
+	◦	View cache status.  
+	4	Concurrency:  
+	◦	Support concurrent reads.  
+	◦	Prevent write collisions using threading.Lock or file locks.  
+	5	Optional: Arrow Flight Server:  
+	◦	Serve queries/tables to downstream services in Arrow format.  
+
+
+
+Let’s Start Step-by-Step
+
+Let’s begin with:
+	•	Step 1: Generate a minimal file/folder scaffold under src/ matching the structure above.  
+	•	Step 2: Implement db_sync.py to connect to Databricks and write tables to DuckDB, reading configs from YAML.  
+	•	Then we can proceed to Flask, Streamlit, etc. one module at a time.  
