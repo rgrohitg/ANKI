@@ -1,0 +1,127 @@
+import os
+import pandas as pd
+import json
+from sklearn.metrics import f1_score
+from deepeval.test_case import LLMTestCase
+from deepeval.metrics import FaithfulnessMetric
+from deepeval.run_test import assert_test
+from deepeval.models import DeepEvalOpenAIModel
+
+# ========== SETUP ==========
+# Replace with your real API key
+os.environ["OPENAI_API_KEY"] = "sk-..."  # GPT-4 recommended
+
+# Paths to data files
+ACRONYM_FILE = "acronyms.xlsx"
+DATA_FILE = "samples.jsonl"  # Must include prompt, rephrased_prompt, generated_sql, expected_sql
+SCHEMA_FILE = "schema.txt"   # Optional
+FEW_SHOT_FILE = "few_shot.txt"  # Optional
+
+# ========== LOAD DATA ==========
+
+# Load acronym dictionary from Excel
+acronym_df = pd.read_excel(ACRONYM_FILE)
+acronyms_dict = dict(zip(acronym_df["short"], acronym_df["full"]))
+
+def expand_acronyms(text: str) -> str:
+    if not isinstance(text, str):
+        return text
+    for short, full in acronyms_dict.items():
+        text = text.replace(short.lower(), full.lower())
+        text = text.replace(short.upper(), full.upper())
+    return text
+
+# Load main dataset
+with open(DATA_FILE, "r") as f:
+    data = [json.loads(line) for line in f]
+
+# Load optional schema
+if os.path.exists(SCHEMA_FILE):
+    with open(SCHEMA_FILE, "r") as f:
+        schema_context = f.read()
+else:
+    schema_context = ""
+
+# Load optional few-shot examples
+if os.path.exists(FEW_SHOT_FILE):
+    with open(FEW_SHOT_FILE, "r") as f:
+        few_shot_context = f.read()
+else:
+    few_shot_context = ""
+
+# ========== SET UP LLM + METRIC ==========
+
+llm = DeepEvalOpenAIModel(model="gpt-4")
+
+faithfulness_metric = FaithfulnessMetric(
+    model=llm,
+    evaluation_prompt=(
+        "You are an expert SQL evaluator.\n"
+        "Given a natural language prompt and the actual and expected SQL queries,\n"
+        "determine whether the actual SQL correctly answers the question.\n"
+        "Use the schema, acronyms, and few-shot examples below to help.\n"
+        "Respond with a score between 0.0 (completely wrong) and 1.0 (perfectly correct), "
+        "and explain your reasoning.\n"
+    )
+)
+
+# ========== EVALUATE ==========
+
+results = []
+y_true = []
+y_pred = []
+
+for i, row in enumerate(data):
+    prompt = expand_acronyms(row["prompt"])
+    rephrased = expand_acronyms(row.get("rephrased_prompt", ""))
+    generated_sql = expand_acronyms(row["generated_sql"])
+    expected_sql = expand_acronyms(row["expected_sql"])
+
+    context = f"""
+    === SCHEMA ===
+    {schema_context}
+
+    === FEW-SHOT EXAMPLES ===
+    {few_shot_context}
+
+    === ACRONYMS ===
+    {json.dumps(acronyms_dict, indent=2)}
+    """
+
+    test_case = LLMTestCase(
+        input=prompt,
+        actual_output=generated_sql,
+        expected_output=expected_sql,
+        context=context
+    )
+
+    score_result = faithfulness_metric.measure(test_case)
+
+    print(f"[{i+1}] Score: {score_result.score:.2f} | Reason: {score_result.reason[:120]}...")
+    
+    results.append({
+        "index": i + 1,
+        "prompt": prompt,
+        "generated_sql": generated_sql,
+        "expected_sql": expected_sql,
+        "score": score_result.score,
+        "reason": score_result.reason
+    })
+
+    # For F1 scoring
+    y_true.append(1)
+    y_pred.append(1 if score_result.score >= 0.8 else 0)
+
+# ========== METRICS ==========
+f1 = f1_score(y_true, y_pred)
+accuracy = sum([yt == yp for yt, yp in zip(y_true, y_pred)]) / len(y_true)
+
+print(f"\n--- Evaluation Summary ---")
+print(f"Total Samples Evaluated: {len(results)}")
+print(f"F1 Score: {f1:.4f}")
+print(f"Accuracy: {accuracy:.4f}")
+
+# ========== SAVE RESULTS ==========
+results_df = pd.DataFrame(results)
+results_df.to_csv("evaluation_results.csv", index=False)
+print("Detailed results saved to evaluation_results.csv")
