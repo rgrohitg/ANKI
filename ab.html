@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Orchestrator UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Using a common font for better aesthetics */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for a more integrated look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* gray-600 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* gray-500 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans flex h-screen w-full overflow-hidden">
+
+    <!-- Sidebar for Sessions -->
+    <aside id="session-sidebar" class="w-full max-w-xs bg-gray-950/50 border-r border-gray-800 flex-col hidden sm:flex">
+        <!-- Sidebar content will be injected by JS -->
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content" class="flex-1 flex flex-col">
+        <!-- Main content (Session Detail View) will be injected by JS -->
+    </main>
+
+    <script type="module">
+        // --- Mock Data (V2) ---
+        const mockSessions = {
+          'session-id-happy-path': { id: 'session-id-happy-path', status: 'Completed', startTime: '2024-07-12T14:00:00Z', steps: [ { agentName: 'SQL to PySpark Converter', status: 'completed', startTime: '2024-07-12T14:00:05Z', endTime: '2024-07-12T14:00:20Z', input: { type: 'code', language: 'sql', content: `SELECT user_id, COUNT(*) FROM logins WHERE login_date > '2024-01-01' GROUP BY user_id;` }, output: { type: 'code', language: 'python', content: `from pyspark.sql import functions as F\n\ndf = spark.table("logins").filter(F.col("login_date") > "2024-01-01").groupBy("user_id").count()\n\ndisplay(df)` }, }, { agentName: 'Reconciliation Agent', status: 'completed', startTime: '2024-07-12T14:00:25Z', endTime: '2024-07-12T14:02:00Z', input: { type: 'text', content: 'Comparing data from SQL Server and Databricks.' }, output: { type: 'reconciliation', summary: 'Success: All 1,542 rows matched perfectly.', details: [] }, }, { agentName: 'Analyzer Agent', status: 'skipped', startTime: null, endTime: null, input: null, output: null, reason: 'Skipped because reconciliation was successful.' }, ] },
+          'session-id-retry-loop': { id: 'session-id-retry-loop', status: 'Completed', startTime: '2024-07-12T15:00:00Z', steps: [ { agentName: 'SQL to PySpark Converter', status: 'completed', startTime: '2024-07-12T15:00:05Z', endTime: '2024-07-12T15:00:30Z', input: { type: 'code', language: 'sql', content: `SELECT order_id, DATEADD(day, 5, order_date) as promised_date FROM orders;` }, output: { type: 'code', language: 'python', content: `// Incorrect translation\ndf = spark.table("orders").withColumn("promised_date", F.expr("DATEADD(day, 5, order_date)"))` }, }, { agentName: 'Reconciliation Agent', status: 'failed', startTime: '2024-07-12T15:00:35Z', endTime: '2024-07-12T15:01:00Z', input: { type: 'text', content: 'Comparing data from SQL Server and Databricks.' }, output: { type: 'error', content: 'PySpark execution failed. AnalysisException: Undefined function: \'DATEADD\'. This function is neither a registered temporary function nor a permanent function registered in the database \'default\'.' }, }, { agentName: 'Analyzer Agent', status: 'completed', startTime: '2024-07-12T15:01:05Z', endTime: '2024-07-12T15:01:20Z', input: { type: 'text', content: 'Analyzing reconciliation failure report.' }, output: { type: 'suggestion', analysis: "The SQL function `DATEADD` is not directly compatible with PySpark's `expr`. The correct PySpark function is `date_add`. The converter prompt needs to be updated to handle this specific SQL dialect translation.", suggestedPromptChange: { action: "Modify the prompt for the 'SQL to PySpark Converter' agent with the following instruction:", newInstruction: "Ensure that any T-SQL `DATEADD(day, number, date)` functions are correctly translated to the PySpark `date_add(date, number)` function." } }, }, { agentName: 'SQL to PySpark Converter', isRetry: true, status: 'completed', startTime: '2024-07-12T15:01:25Z', endTime: '2024-07-12T15:01:50Z', input: { type: 'code', language: 'sql', content: `SELECT order_id, DATEADD(day, 5, order_date) as promised_date FROM orders;` }, output: { type: 'code', language: 'python', content: `from pyspark.sql import functions as F\n\n// Corrected translation\ndf = spark.table("orders").withColumn("promised_date", F.date_add(F.col("order_date"), 5))` }, }, { agentName: 'Reconciliation Agent', isRetry: true, status: 'completed', startTime: '2024-07-12T15:01:55Z', endTime: '2024-07-12T15:03:30Z', input: { type: 'text', content: 'Re-comparing data after correction.' }, output: { type: 'reconciliation', summary: 'Success: All 8,912 rows matched perfectly after correction.', details: [] }, }, ], },
+          'session-id-12345': { id: 'session-id-12345', status: 'Completed', startTime: '2024-07-11T10:00:00Z', steps: [ { agentName: 'SQL to PySpark Converter', status: 'completed', startTime: '2024-07-11T10:00:05Z', endTime: '2024-07-11T10:00:25Z', input: { type: 'code', language: 'sql', content: `SELECT customer_id, SUM(order_amount) AS total_spent FROM orders GROUP BY customer_id;` }, output: { type: 'code', language: 'python', content: `from pyspark.sql import functions as F\ndf = spark.table("orders").groupBy("customer_id").agg(F.sum("order_amount").alias("total_spent"))` }, }, { agentName: 'Reconciliation Agent', status: 'completed', startTime: '2024-07-11T10:00:30Z', endTime: '2024-07-11T10:05:00Z', input: { type: 'text', content: 'Comparing data from SQL Server and Databricks execution.' }, output: { type: 'reconciliation', summary: 'Discrepancies Found: 2 rows mismatched due to floating point precision.', details: [{ id: 789, sql_total: 1024.55, spark_total: 1024.550000001 }, { id: 456, sql_total: 987.12, spark_total: 987.119999999 }] }, }, { agentName: 'Analyzer Agent', status: 'completed', startTime: '2024-07-11T10:05:05Z', endTime: '2024-07-11T10:05:30Z', input: { type: 'text', content: 'Analyzing reconciliation report for root cause.' }, output: { type: 'suggestion', analysis: 'The data mismatch is due to floating point precision differences between SQL Server and Spark.', suggestedPromptChange: { action: "Modify the Converter Agent prompt to handle precision:", newInstruction: "When aggregating monetary values, cast the final sum to a `DECIMAL(10, 2)` type in the PySpark code to ensure consistent precision with the source SQL Server." } }, }, ], },
+        };
+
+        // --- State Management ---
+        let selectedSessionId = 'session-id-retry-loop';
+        let viewMode = 'timeline'; // 'timeline' or 'flow'
+
+        // --- Icon Components (as functions returning SVG strings) ---
+        const CheckCircleIcon = (className) => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+        const XCircleIcon = (className) => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+        const LoaderIcon = (className) => `<svg class="${className} animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+        const SkipForwardIcon = (className) => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>`;
+        const DotIcon = (className) => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>`;
+        const ClipboardIcon = (className) => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>`;
+        const RefreshCwIcon = (className) => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>`;
+        const ListIcon = (className) => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>`;
+        const GitMergeIcon = (className) => `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 1 9 9"/></svg>`;
+
+
+        // --- UI Component Functions (returning HTML strings) ---
+        const StatusBadge = (status) => {
+            const baseClasses = 'px-2.5 py-0.5 text-xs font-semibold rounded-full inline-block';
+            const statusMap = { 'Completed': 'bg-green-500/20 text-green-300', 'In Progress': 'bg-blue-500/20 text-blue-300 animate-pulse', 'Failed': 'bg-red-500/20 text-red-300', 'Pending': 'bg-gray-500/20 text-gray-400', 'Skipped': 'bg-yellow-500/20 text-yellow-300', };
+            return `<span class="${baseClasses} ${statusMap[status] || statusMap['Pending']}">${status}</span>`;
+        };
+
+        const CodeBlock = (language, content, uniqueId) => {
+            const sanitizedContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return `
+                <div class="bg-gray-900 rounded-lg overflow-hidden relative group">
+                    <div class="flex justify-between items-center px-4 py-2 bg-gray-950/50">
+                        <span class="text-sm font-semibold text-gray-400 uppercase">${language}</span>
+                        <button data-copy-id="${uniqueId}" class="copy-button text-gray-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100 p-1 rounded-md">
+                           ${ClipboardIcon('w-4 h-4')}
+                        </button>
+                    </div>
+                    <pre class="p-4 text-sm overflow-x-auto text-white"><code id="code-${uniqueId}">${sanitizedContent}</code></pre>
+                </div>`;
+        };
+        
+        const ReconciliationOutput = (data) => `
+            <div class="space-y-4">
+                <p class="font-semibold text-lg ${data.details && data.details.length > 0 ? 'text-orange-300' : 'text-green-300'}">${data.summary}</p>
+                ${data.details && data.details.length > 0 ? `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-300">
+                            <thead class="text-xs text-gray-400 uppercase bg-gray-700/50"><tr><th scope="col" class="px-6 py-3">ID</th><th scope="col" class="px-6 py-3">SQL Server Total</th><th scope="col" class="px-6 py-3">PySpark Total</th></tr></thead>
+                            <tbody>
+                                ${data.details.map(row => `
+                                    <tr class="bg-gray-800/50 border-b border-gray-700/50">
+                                        <td class="px-6 py-4">${row.id}</td>
+                                        <td class="px-6 py-4 font-mono">${row.sql_total}</td>
+                                        <td class="px-6 py-4 font-mono text-orange-400">${row.spark_total}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>` : ''}
+            </div>`;
+
+        const SuggestionOutput = (data) => `
+            <div class="bg-blue-900/30 border border-blue-500/50 rounded-lg p-4 space-y-4">
+                <div>
+                    <h4 class="font-semibold text-blue-300 mb-1">Analysis</h4>
+                    <p class="text-blue-200 text-sm">${data.analysis}</p>
+                </div>
+                ${data.suggestedPromptChange ? `
+                    <div>
+                        <h4 class="font-semibold text-blue-300 mb-2">${data.suggestedPromptChange.action}</h4>
+                        <div class="bg-gray-900/50 p-3 rounded-md">
+                            <p class="text-sm text-white font-mono">${data.suggestedPromptChange.newInstruction}</p>
+                        </div>
+                    </div>` : ''}
+            </div>`;
+
+        const ErrorOutput = (content) => `<div class="bg-red-900/30 border border-red-500/50 rounded-lg p-4"><h4 class="font-semibold text-red-300 mb-2">Agent Error</h4><pre class="text-red-200 text-sm whitespace-pre-wrap font-mono">${content}</pre></div>`;
+        const SkippedOutput = (reason) => `<div class="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-4"><h4 class="font-semibold text-yellow-300 mb-2">Agent Skipped</h4><p class="text-yellow-200 text-sm">${reason}</p></div>`;
+        const getStatusIcon = (status) => {
+            switch (status) {
+                case 'completed': return CheckCircleIcon("w-6 h-6 text-green-400");
+                case 'in-progress': return LoaderIcon("w-6 h-6 text-blue-400");
+                case 'failed': return XCircleIcon("w-6 h-6 text-red-400");
+                case 'skipped': return SkipForwardIcon("w-6 h-6 text-yellow-400");
+                default: return DotIcon("w-6 h-6 text-gray-600");
+            }
+        };
+
+        const AgentStep = (step, index, isLast) => {
+            const { agentName, status, startTime, endTime, input, output, isRetry, reason } = step;
+            const getBorderColor = () => {
+                switch (status) {
+                    case 'completed': return 'border-green-500/50';
+                    case 'in-progress': return 'border-blue-500/50 animate-pulse';
+                    case 'failed': return 'border-red-500/50';
+                    case 'skipped': return 'border-yellow-500/50';
+                    default: return 'border-gray-700';
+                }
+            };
+            const renderOutput = () => {
+                if (status === 'skipped') return SkippedOutput(reason);
+                if (!output) return `<p class="text-gray-500 italic">No output generated yet.</p>`;
+                switch (output.type) {
+                    case 'code': return CodeBlock(output.language, output.content, `output-${index}`);
+                    case 'reconciliation': return ReconciliationOutput(output);
+                    case 'suggestion': return SuggestionOutput(output);
+                    case 'error': return ErrorOutput(output.content);
+                    default: return `<p class="text-gray-400">${output.content}</p>`;
+                }
+            };
+            const formatTime = (time) => time ? new Date(time).toLocaleTimeString() : 'N/A';
+            const duration = startTime && endTime ? `${((new Date(endTime) - new Date(startTime)) / 1000).toFixed(2)}s` : '';
+
+            return `
+                <div class="relative pl-12">
+                    ${!isLast ? '<div class="absolute left-[22px] top-2 h-full w-0.5 bg-gray-700"></div>' : ''}
+                    <div class="absolute left-0 top-0 flex items-center justify-center w-11 h-11"><div class="absolute w-8 h-8 bg-gray-800 rounded-full"></div><div class="relative z-10">${getStatusIcon(status)}</div></div>
+                    <div class="ml-4 border ${getBorderColor()} bg-gray-800/50 rounded-xl p-6 mb-8">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-white flex items-center">${agentName} ${isRetry ? `<span class="ml-3 text-xs font-bold text-blue-300 bg-blue-500/20 px-2 py-0.5 rounded-full flex items-center">${RefreshCwIcon('w-3 h-3 mr-1.5')}RETRY</span>` : ''}</h3>
+                                <div class="text-xs text-gray-400 mt-1 flex items-center flex-wrap gap-x-4">
+                                   <span>Status: <span class="font-semibold text-gray-300 capitalize">${status}</span></span>
+                                   ${startTime ? `<span>Start: <span class="font-semibold text-gray-300">${formatTime(startTime)}</span></span>` : ''}
+                                   ${endTime ? `<span>End: <span class="font-semibold text-gray-300">${formatTime(endTime)}</span></span>` : ''}
+                                   ${duration ? `<span>Duration: <span class="font-semibold text-gray-300">${duration}</span></span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            ${input ? `<div><h4 class="text-lg font-semibold mb-2 text-gray-300">Input</h4>${input.type === 'code' ? CodeBlock(input.language, input.content, `input-${index}`) : `<p class="text-gray-400 p-4 bg-gray-900/50 rounded-lg">${input.content}</p>`}</div>` : ''}
+                            ${(output || status === 'skipped') ? `<div><h4 class="text-lg font-semibold mb-2 text-gray-300">Output</h4>${renderOutput()}</div>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+        };
+
+        const TimelineView = (session) => `<div>${session.steps.map((step, index) => AgentStep(step, index, index === session.steps.length - 1)).join('')}</div>`;
+
+        const FlowView = (session) => {
+            const mainFlowSteps = session.steps.filter(s => !s.isRetry);
+            const hasRetry = session.steps.some(step => step.isRetry);
+            const reconAgentIndex = mainFlowSteps.findIndex(s => s.agentName === 'Reconciliation Agent');
+            const converterAgentIndex = mainFlowSteps.findIndex(s => s.agentName === 'SQL to PySpark Converter');
+            const analyzerAgent = session.steps.find(s => s.agentName === 'Analyzer Agent' && s.status !== 'skipped');
+
+            const gridCols = `repeat(${mainFlowSteps.length}, minmax(10rem, 1fr))`;
+
+            return `
+                <div class="p-8 bg-gray-950/30 rounded-xl overflow-x-auto">
+                    <div class="relative" style="display: grid; grid-template-columns: ${gridCols}; gap: 0 2rem; align-items: start; justify-items: center;">
+                        
+                        <!-- Main Flow Nodes -->
+                        ${mainFlowSteps.map((step, index) => `
+                            <div class="flex flex-col items-center text-center z-10" style="grid-column: ${index + 1}; grid-row: 1;">
+                                <div class="relative w-16 h-16">
+                                    <!-- Horizontal Connector -->
+                                    ${index > 0 ? `<div class="absolute h-1 bg-gray-700" style="top: 50%; right: 50%; width: calc(100% + 2rem); transform: translateY(-50%); z-index: -1;"></div>` : ''}
+                                    
+                                    <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 relative ${
+                                        step.status === 'failed' ? 'border-red-500 bg-red-900/50' :
+                                        step.status === 'skipped' ? 'border-yellow-500 bg-yellow-900/50' :
+                                        'border-green-500 bg-green-900/50'
+                                    }">
+                                        ${getStatusIcon(step.status)}
+                                    </div>
+                                </div>
+                                <p class="mt-2 text-sm font-semibold w-32">${step.agentName}</p>
+                                ${step.status === 'skipped' ? `<p class="text-xs text-yellow-400">(Skipped)</p>` : ''}
+                            </div>
+                        `).join('')}
+
+                        <!-- Analyzer Agent and Retry Loop -->
+                        ${analyzerAgent ? `
+                            <!-- Analyzer Node -->
+                            <div class="flex flex-col items-center text-center z-10 mt-8" style="grid-column: ${reconAgentIndex + 1}; grid-row: 2;">
+                                <!-- Vertical Connector -->
+                                <div class="absolute h-8 w-1 bg-gray-600" style="bottom: 100%; left: 50%; transform: translateX(-50%);"></div>
+
+                                <div class="w-16 h-16 rounded-full flex items-center justify-center border-2 border-blue-500 bg-blue-900/50">
+                                    ${getStatusIcon(analyzerAgent.status)}
+                                </div>
+                                <p class="mt-2 text-sm font-semibold w-32">${analyzerAgent.name || analyzerAgent.agentName}</p>
+                            </div>
+
+                            <!-- Retry Path (if applicable) -->
+                            ${hasRetry ? `
+                                <div class="absolute z-0" style="grid-column-start: ${converterAgentIndex + 1}; grid-column-end: ${reconAgentIndex + 1}; grid-row: 2; top: 4.5rem; left: 50%; right: 50%; height: 4rem;">
+                                    <!-- Horizontal part of the loop -->
+                                    <div class="absolute bottom-0 h-1 bg-blue-500/70 w-full"></div>
+                                    <!-- Left vertical part -->
+                                    <div class="absolute left-0 top-0 w-1 h-full bg-blue-500/70"></div>
+                                    <!-- Right vertical part -->
+                                    <div class="absolute right-0 top-0 w-1 h-1/2 bg-blue-500/70"></div>
+                                    <!-- Arrow Head -->
+                                    <div class="absolute w-3 h-3 bg-blue-500/70" style="left: -5px; top: -10px; clip-path: polygon(0% 50%, 100% 0%, 100% 100%);"></div>
+                                    <p class="absolute text-xs text-blue-400" style="bottom: 0.5rem; left: 50%; transform: translateX(-50%);">RETRY</p>
+                                </div>
+                            ` : ''}
+                        ` : ''}
+                    </div>
+                </div>`;
+        };
+
+        const SessionDetailView = (session) => {
+            if (!session) {
+                return `<div class="flex-1 flex items-center justify-center text-gray-500"><p>Select a session to view details</p></div>`;
+            }
+            return `
+                <div class="flex-1 p-4 sm:p-8 overflow-y-auto">
+                    <div class="mb-8">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h2 class="text-2xl md:text-3xl font-bold text-white truncate" title="${session.id}">Session: ${session.id}</h2>
+                                <div class="flex items-center space-x-4 mt-2">
+                                    ${StatusBadge(session.status)}
+                                    <span class="text-sm text-gray-400">Started: ${new Date(session.startTime).toLocaleString()}</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 sm:mt-0 flex items-center bg-gray-800/80 p-1 rounded-lg">
+                                <button data-view-mode="timeline" class="view-mode-button px-3 py-1.5 text-sm font-semibold rounded-md flex items-center transition-colors ${viewMode === 'timeline' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700/50'}">
+                                    ${ListIcon('w-4 h-4 mr-2')} Timeline
+                                </button>
+                                <button data-view-mode="flow" class="view-mode-button px-3 py-1.5 text-sm font-semibold rounded-md flex items-center transition-colors ${viewMode === 'flow' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700/50'}">
+                                    ${GitMergeIcon('w-4 h-4 mr-2')} Flow
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="session-content-area">
+                        ${viewMode === 'timeline' ? TimelineView(session) : FlowView(session)}
+                    </div>
+                </div>`;
+        };
+
+        // --- Main Render Function ---
+        function render() {
+            const sessions = Object.values(mockSessions);
+            const selectedSession = mockSessions[selectedSessionId];
+            
+            const sidebarEl = document.getElementById('session-sidebar');
+            const mainContentEl = document.getElementById('main-content');
+
+            // Render Sidebar
+            sidebarEl.innerHTML = `
+                <div class="p-4 border-b border-gray-800">
+                    <h1 class="text-2xl font-bold text-white">Agent Orchestrator</h1>
+                    <p class="text-sm text-gray-400">Monitoring Dashboard V2</p>
+                </div>
+                <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                    <h2 class="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Sessions</h2>
+                    ${sessions.map(session => `
+                        <button data-session-id="${session.id}" class="session-button w-full text-left px-3 py-2 rounded-lg transition-colors ${selectedSessionId === session.id ? 'bg-blue-600/20 text-blue-200' : 'hover:bg-gray-800/60 text-gray-300'}">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold truncate">${session.id}</span>
+                                ${StatusBadge(session.status)}
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">${new Date(session.startTime).toLocaleDateString()}</p>
+                        </button>
+                    `).join('')}
+                </nav>`;
+            
+            // Render Main Content
+            mainContentEl.innerHTML = SessionDetailView(selectedSession);
+            
+            // Add Event Listeners after rendering
+            addEventListeners();
+        }
+
+        // --- Event Handling ---
+        function addEventListeners() {
+            // Session selection
+            document.querySelectorAll('.session-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    selectedSessionId = e.currentTarget.dataset.sessionId;
+                    render();
+                });
+            });
+
+            // View mode toggle
+            document.querySelectorAll('.view-mode-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    viewMode = e.currentTarget.dataset.viewMode;
+                    render();
+                });
+            });
+            
+            // Copy button functionality
+            document.querySelectorAll('.copy-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const buttonEl = e.currentTarget;
+                    const copyId = buttonEl.dataset.copyId;
+                    const textToCopy = mockSessions[selectedSessionId].steps[copyId.split('-')[1]][copyId.split('-')[0]].content;
+
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        buttonEl.innerHTML = CheckCircleIcon('w-4 h-4 text-green-400');
+                        setTimeout(() => {
+                           buttonEl.innerHTML = ClipboardIcon('w-4 h-4');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy text: ', err);
+                    });
+                });
+            });
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', render);
+
+    </script>
+</body>
+</html>
