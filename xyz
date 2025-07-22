@@ -119,3 +119,27 @@ Suggested Order of Use
     - Orchestrator updates the iteration and session end_time/status.
     - If analyser flags issues, start next iteration (up to 3–4 max).
 
+
+You can create a agent_activity_log view for reporting:
+
+sql
+Copy
+Edit
+CREATE VIEW agent_activity_log AS
+SELECT 
+  s.session_id,
+  i.iteration_number,
+  a.agent_name,
+  a.status,
+  a.start_time,
+  a.end_time,
+  ai.input_type,
+  ai.input_data,
+  ao.output_type,
+  ao.output_data
+FROM sessions s
+JOIN iterations i ON s.session_id = i.session_id
+JOIN agent_runs a ON a.iteration_id = i.iteration_id
+LEFT JOIN agent_inputs ai ON ai.agent_run_id = a.agent_run_id
+LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
+
