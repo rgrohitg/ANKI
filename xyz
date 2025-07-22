@@ -1,0 +1,121 @@
+
+============================
+Agentic Framework: DuckDB Tables
+============================
+
+1. sessions
+-----------
+Stores overall session metadata (one session = one full orchestration run that may have multiple iterations).
+
+DDL:
+CREATE TABLE sessions (
+    session_id UUID,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    status TEXT,
+    created_by TEXT,
+    max_iterations INTEGER,
+    final_result TEXT
+);
+
+When to insert:
+- At the start of the workflow in workflow.py (Orchestrator).
+- Generate UUID for session_id.
+- Update end_time and final_result at end of the process.
+
+-------------------------------------------------------
+
+2. iterations
+-------------
+Tracks each attempt (iteration) within a session. Each retry = a new iteration.
+
+DDL:
+CREATE TABLE iterations (
+    iteration_id UUID,
+    session_id UUID,
+    iteration_number INTEGER,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    needs_retry BOOLEAN,
+    reason TEXT
+);
+
+When to insert:
+- Start of each iteration loop (in Orchestrator).
+- Generate new iteration_id UUID.
+- Set needs_retry=True if analyser suggests another try.
+- Update end_time when all agents finish.
+
+-------------------------------------------------------
+
+3. agent_runs
+-------------
+Captures each agent execution within an iteration.
+
+DDL:
+CREATE TABLE agent_runs (
+    agent_run_id UUID,
+    iteration_id UUID,
+    session_id UUID,
+    agent_name TEXT,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    status TEXT,
+    error_message TEXT
+);
+
+When to insert:
+- At the start of each agent (converter.py, deployer.py, recon.py, analyser.py).
+- Set status = "success" or "failed".
+- Insert error_message if applicable.
+
+-------------------------------------------------------
+
+4. agent_inputs
+---------------
+Stores prompt/context provided to each agent.
+
+DDL:
+CREATE TABLE agent_inputs (
+    agent_run_id UUID,
+    input_type TEXT,
+    input_data TEXT
+);
+
+When to insert:
+- Inside each agent before calling the model/tool.
+- Save all relevant prompts or structured inputs.
+
+-------------------------------------------------------
+
+5. agent_outputs
+----------------
+Stores result returned by agent (e.g. PySpark code, analysis results).
+
+DDL:
+CREATE TABLE agent_outputs (
+    agent_run_id UUID,
+    output_type TEXT,
+    output_data TEXT
+);
+
+When to insert:
+- After the agent finishes execution.
+- Save output string or result object.
+
+-------------------------------------------------------
+
+Suggested Order of Use
+-----------------------
+1. Orchestrator (workflow.py) creates new session_id and inserts into sessions.
+2. For each iteration:
+    - Insert into iterations with new iteration_id.
+    - For each agent:
+        - Generate agent_run_id
+        - Insert into agent_runs (before and update after run)
+        - Insert into agent_inputs (prompt or input data)
+        - Insert into agent_outputs (final result)
+3. After all agents complete:
+    - Orchestrator updates the iteration and session end_time/status.
+    - If analyser flags issues, start next iteration (up to 3–4 max).
+
