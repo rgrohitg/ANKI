@@ -143,6 +143,118 @@ JOIN agent_runs a ON a.iteration_id = i.iteration_id
 LEFT JOIN agent_inputs ai ON ai.agent_run_id = a.agent_run_id
 LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
 
+Of course. Based on the three-column design and the database schema you've provided, here is a summary of the backend API endpoints needed to power this UI.
+
+This API design focuses on efficiency by fetching related data together, which minimizes the number of requests the frontend needs to make.
+
+Summary of Required Endpoints
+You essentially need two primary endpoints to make this entire UI work seamlessly.
+
+1. Get All Sessions
+This endpoint populates the first column with the list of all available sessions.
+
+Endpoint: GET /api/sessions
+
+Purpose: To fetch a summarized list of all orchestration sessions. The UI will call this once on page load.
+
+SQL Equivalent:
+
+SQL
+
+SELECT session_id, start_time, end_time, status, created_by
+FROM sessions
+ORDER BY start_time DESC;
+JSON Response Example:
+
+JSON
+
+[
+  {
+    "session_id": "session-uuid-1",
+    "start_time": "2025-07-22T21:00:00Z",
+    "status": "Completed",
+    "created_by": "user_a"
+  },
+  {
+    "session_id": "session-uuid-2",
+    "start_time": "2025-07-22T21:15:00Z",
+    "status": "In Progress",
+    "created_by": "user_b"
+  }
+]
+2. Get Full Details for a Single Session
+This is the most important endpoint. When a user clicks a session in the first column, this single API call will fetch all the necessary data to populate the second (Iterations/Flow) and third (Details) columns.
+
+Endpoint: GET /api/sessions/{session_id}
+
+Purpose: To fetch a complete, nested structure of a single session, including all its iterations, agent runs, and their associated inputs and outputs.
+
+SQL Equivalent: This would involve joining all your tables using the provided session_id. The backend would then structure the flat SQL result into a nested JSON object.
+
+SQL
+
+-- Using the provided agent_activity_log view
+SELECT * FROM agent_activity_log
+WHERE session_id = '{session_id}';
+JSON Response Example:
+
+JSON
+
+{
+  "session_id": "session-uuid-1",
+  "start_time": "2025-07-22T21:00:00Z",
+  "end_time": "2025-07-22T21:03:30Z",
+  "status": "Completed",
+  "created_by": "user_a",
+  "final_result": "Success",
+  "iterations": [
+    {
+      "iteration_id": "iter-uuid-1-1",
+      "iteration_number": 1,
+      "needs_retry": true,
+      "reason": "Reconciliation failed due to function incompatibility.",
+      "agent_runs": [
+        {
+          "agent_run_id": "run-uuid-1-1-1",
+          "agent_name": "SQL to PySpark Converter",
+          "status": "Completed",
+          "start_time": "2025-07-22T21:00:05Z",
+          "end_time": "2025-07-22T21:00:30Z",
+          "error_message": null,
+          "input": {
+            "input_type": "sql_query",
+            "input_data": "SELECT order_id, DATEADD(day, 5, order_date) as promised_date FROM orders;"
+          },
+          "output": {
+            "output_type": "pyspark_code",
+            "output_data": "df = spark.table(\"orders\").withColumn(\"promised_date\", F.expr(\"DATEADD(day, 5, order_date)\"))"
+          }
+        },
+        {
+          "agent_run_id": "run-uuid-1-1-2",
+          "agent_name": "Reconciliation Agent",
+          "status": "Failed",
+          "start_time": "2025-07-22T21:00:35Z",
+          "end_time": "2025-07-22T21:01:00Z",
+          "error_message": "PySpark execution failed. AnalysisException: Undefined function: 'DATEADD'.",
+          "input": {
+            "input_type": "comparison_config",
+            "input_data": "{'source': 'sql_server', 'target': 'databricks'}"
+          },
+          "output": {
+            "output_type": "error_log",
+            "output_data": "PySpark execution failed. AnalysisException: Undefined function: 'DATEADD'."
+          }
+        }
+        // ... other agent runs for this iteration
+      ]
+    },
+    // ... other iterations for this session
+  ]
+}
+By designing the API this way, the frontend remains simple and performant. It loads the list of sessions once, and then makes a single, comprehensive call for all the details whenever a new session is selected.
+
+
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
@@ -200,7 +312,7 @@ LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
     </aside>
 
     <!-- Column 2: Iterations & Agent Runs -->
-    <section id="flow-column" class="flex-1 flex flex-col h-full border-r border-slate-800 min-w-[320px]">
+    <section id="flow-column" class="flex-1 flex flex-col h-full border-r border-slate-800 min-w-[400px]">
         <!-- Flow content will be injected by JS -->
     </section>
 
@@ -217,40 +329,24 @@ LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
                 { session_id: 'session-uuid-2', start_time: '2025-07-22T21:15:00Z', end_time: null, status: 'In Progress', created_by: 'user_b', max_iterations: 3, final_result: null },
             ],
             iterations: [
-                // Iterations for session-uuid-1
                 { iteration_id: 'iter-uuid-1-1', session_id: 'session-uuid-1', iteration_number: 1, start_time: '2025-07-22T21:00:05Z', end_time: '2025-07-22T21:01:20Z', needs_retry: true, reason: 'Reconciliation failed due to function incompatibility.' },
                 { iteration_id: 'iter-uuid-1-2', session_id: 'session-uuid-1', iteration_number: 2, start_time: '2025-07-22T21:01:25Z', end_time: '2025-07-22T21:03:30Z', needs_retry: false, reason: null },
-                 // Iterations for session-uuid-2
                 { iteration_id: 'iter-uuid-2-1', session_id: 'session-uuid-2', iteration_number: 1, start_time: '2025-07-22T21:15:05Z', end_time: null, needs_retry: false, reason: null },
             ],
             agent_runs: [
-                // Runs for iter-uuid-1-1
                 { agent_run_id: 'run-uuid-1-1-1', iteration_id: 'iter-uuid-1-1', session_id: 'session-uuid-1', agent_name: 'SQL to PySpark Converter', start_time: '2025-07-22T21:00:05Z', end_time: '2025-07-22T21:00:30Z', status: 'Completed', error_message: null },
                 { agent_run_id: 'run-uuid-1-1-2', iteration_id: 'iter-uuid-1-1', session_id: 'session-uuid-1', agent_name: 'Reconciliation Agent', start_time: '2025-07-22T21:00:35Z', end_time: '2025-07-22T21:01:00Z', status: 'Failed', error_message: "PySpark execution failed. AnalysisException: Undefined function: 'DATEADD'." },
                 { agent_run_id: 'run-uuid-1-1-3', iteration_id: 'iter-uuid-1-1', session_id: 'session-uuid-1', agent_name: 'Analyzer Agent', start_time: '2025-07-22T21:01:05Z', end_time: '2025-07-22T21:01:20Z', status: 'Completed', error_message: null },
-                // Runs for iter-uuid-1-2 (the retry)
                 { agent_run_id: 'run-uuid-1-2-1', iteration_id: 'iter-uuid-1-2', session_id: 'session-uuid-1', agent_name: 'SQL to PySpark Converter', start_time: '2025-07-22T21:01:25Z', end_time: '2025-07-22T21:01:50Z', status: 'Completed', error_message: null },
                 { agent_run_id: 'run-uuid-1-2-2', iteration_id: 'iter-uuid-1-2', session_id: 'session-uuid-1', agent_name: 'Reconciliation Agent', start_time: '2025-07-22T21:01:55Z', end_time: '2025-07-22T21:03:30Z', status: 'Completed', error_message: null },
-                // Runs for iter-uuid-2-1
                 { agent_run_id: 'run-uuid-2-1-1', iteration_id: 'iter-uuid-2-1', session_id: 'session-uuid-2', agent_name: 'SQL to PySpark Converter', start_time: '2025-07-22T21:15:05Z', end_time: '2025-07-22T21:15:45Z', status: 'Completed', error_message: null },
                 { agent_run_id: 'run-uuid-2-1-2', iteration_id: 'iter-uuid-2-1', session_id: 'session-uuid-2', agent_name: 'Reconciliation Agent', start_time: '2025-07-22T21:15:50Z', end_time: null, status: 'In Progress', error_message: null },
             ],
             agent_inputs: [
-                { agent_run_id: 'run-uuid-1-1-1', input_type: 'sql_query', input_data: "SELECT order_id, DATEADD(day, 5, order_date) as promised_date FROM orders;" },
-                { agent_run_id: 'run-uuid-1-1-2', input_type: 'comparison_config', input_data: "{'source': 'sql_server', 'target': 'databricks'}" },
-                { agent_run_id: 'run-uuid-1-1-3', input_type: 'error_report', input_data: "Reconciliation failed with error: Undefined function: 'DATEADD'" },
-                { agent_run_id: 'run-uuid-1-2-1', input_type: 'sql_query_with_suggestion', input_data: "Original SQL: SELECT order_id, DATEADD(day, 5, order_date) as promised_date FROM orders;\nAnalyzer Suggestion: Translate DATEADD to date_add." },
-                { agent_run_id: 'run-uuid-1-2-2', input_type: 'comparison_config', input_data: "{'source': 'sql_server', 'target': 'databricks'}" },
-                { agent_run_id: 'run-uuid-2-1-1', input_type: 'sql_query', input_data: "SELECT * FROM customers;" },
-                { agent_run_id: 'run-uuid-2-1-2', input_type: 'comparison_config', input_data: "{'source': 'sql_server', 'target': 'databricks'}" },
+                { agent_run_id: 'run-uuid-1-1-1', input_type: 'sql_query', input_data: "SELECT order_id, DATEADD(day, 5, order_date) as promised_date FROM orders;" }, { agent_run_id: 'run-uuid-1-1-2', input_type: 'comparison_config', input_data: "{'source': 'sql_server', 'target': 'databricks'}" }, { agent_run_id: 'run-uuid-1-1-3', input_type: 'error_report', input_data: "Reconciliation failed with error: Undefined function: 'DATEADD'" }, { agent_run_id: 'run-uuid-1-2-1', input_type: 'sql_query_with_suggestion', input_data: "Original SQL: SELECT order_id, DATEADD(day, 5, order_date) as promised_date FROM orders;\nAnalyzer Suggestion: Translate DATEADD to date_add." }, { agent_run_id: 'run-uuid-1-2-2', input_type: 'comparison_config', input_data: "{'source': 'sql_server', 'target': 'databricks'}" }, { agent_run_id: 'run-uuid-2-1-1', input_type: 'sql_query', input_data: "SELECT * FROM customers;" }, { agent_run_id: 'run-uuid-2-1-2', input_type: 'comparison_config', input_data: "{'source': 'sql_server', 'target': 'databricks'}" },
             ],
             agent_outputs: [
-                { agent_run_id: 'run-uuid-1-1-1', output_type: 'pyspark_code', output_data: `df = spark.table("orders").withColumn("promised_date", F.expr("DATEADD(day, 5, order_date)"))` },
-                { agent_run_id: 'run-uuid-1-1-2', output_type: 'error_log', output_data: "PySpark execution failed. AnalysisException: Undefined function: 'DATEADD'." },
-                { agent_run_id: 'run-uuid-1-1-3', output_type: 'analysis_result', output_data: `{"needs_retry": true, "suggestion": "The SQL function 'DATEADD' is not directly compatible with PySpark's 'expr'. The correct PySpark function is 'date_add'. Modify the prompt to handle this translation."}` },
-                { agent_run_id: 'run-uuid-1-2-1', output_type: 'pyspark_code', output_data: `from pyspark.sql import functions as F\ndf = spark.table("orders").withColumn("promised_date", F.date_add(F.col("order_date"), 5))` },
-                { agent_run_id: 'run-uuid-1-2-2', output_type: 'reconciliation_summary', output_data: `{"status": "Success", "message": "All 8,912 rows matched perfectly after correction."}` },
-                { agent_run_id: 'run-uuid-2-1-1', output_type: 'pyspark_code', output_data: `df = spark.table("customers")` },
+                { agent_run_id: 'run-uuid-1-1-1', output_type: 'pyspark_code', output_data: `df = spark.table("orders").withColumn("promised_date", F.expr("DATEADD(day, 5, order_date)"))` }, { agent_run_id: 'run-uuid-1-1-2', output_type: 'error_log', output_data: "PySpark execution failed. AnalysisException: Undefined function: 'DATEADD'." }, { agent_run_id: 'run-uuid-1-1-3', output_type: 'analysis_result', output_data: `{"needs_retry": true, "suggestion": "The SQL function 'DATEADD' is not directly compatible with PySpark's 'expr'. The correct PySpark function is 'date_add'. Modify the prompt to handle this translation."}` }, { agent_run_id: 'run-uuid-1-2-1', output_type: 'pyspark_code', output_data: `from pyspark.sql import functions as F\ndf = spark.table("orders").withColumn("promised_date", F.date_add(F.col("order_date"), 5))` }, { agent_run_id: 'run-uuid-1-2-2', output_type: 'reconciliation_summary', output_data: `{"status": "Success", "message": "All 8,912 rows matched perfectly after correction."}` }, { agent_run_id: 'run-uuid-2-1-1', output_type: 'pyspark_code', output_data: `df = spark.table("customers")` },
             ]
         };
 
@@ -258,14 +354,15 @@ LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
         let state = {
             selectedSessionId: 'session-uuid-1',
             selectedAgentRunId: 'run-uuid-1-1-1',
+            flowViewMode: 'list', // 'list' or 'flow'
         };
 
         // --- ICONS ---
         const CheckCircleIcon = (cn) => `<svg class="${cn}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>`;
         const XCircleIcon = (cn) => `<svg class="${cn}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>`;
         const ClockIcon = (cn) => `<svg class="${cn} animate-spin" style="animation-duration: 3s;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>`;
-        const SkipIcon = (cn) => `<svg class="${cn}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5.293 4.293a1 1 0 011.414 0L10 7.586l3.293-3.293a1 1 0 111.414 1.414L11.414 9l3.293 3.293a1 1 0 01-1.414 1.414L10 10.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 9 5.293 5.707a1 1 0 010-1.414z" /></svg>`;
-        const RetryIcon = (cn) => `<svg class="${cn}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-11.664 0l4.992-4.993m-4.993 0l3.181-3.183a8.25 8.25 0 0111.664 0l3.181 3.183" /></svg>`;
+        const ListBulletIcon = (cn) => `<svg class="${cn}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>`;
+        const ShareIcon = (cn) => `<svg class="${cn}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" /></svg>`;
         const ClipboardIcon = (cn) => `<svg class="${cn}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25h-1.5a2.25 2.25 0 01-2.25-2.25V3.888c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>`;
         
         // --- COMPONENT TEMPLATES ---
@@ -276,85 +373,106 @@ LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
 
         const CodeBlock = (language, content, uniqueId) => {
             const sanitizedContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            return `
-                <div class="bg-slate-900 rounded-lg overflow-hidden relative group">
-                    <div class="flex justify-between items-center px-4 py-1.5 bg-slate-950">
-                        <span class="text-xs font-semibold text-slate-400 uppercase">${language}</span>
-                        <button data-copy-id="${uniqueId}" class="copy-button text-slate-400 hover:text-white transition-colors p-1 rounded-md">
-                           ${ClipboardIcon('w-4 h-4')}
-                        </button>
-                    </div>
-                    <pre class="p-4 text-sm overflow-x-auto custom-scrollbar"><code id="code-${uniqueId}">${sanitizedContent}</code></pre>
-                </div>`;
+            return `<div class="bg-slate-900 rounded-lg overflow-hidden relative group"><div class="flex justify-between items-center px-4 py-1.5 bg-slate-950"><span class="text-xs font-semibold text-slate-400 uppercase">${language}</span><button data-copy-id="${uniqueId}" class="copy-button text-slate-400 hover:text-white transition-colors p-1 rounded-md">${ClipboardIcon('w-4 h-4')}</button></div><pre class="p-4 text-sm overflow-x-auto custom-scrollbar"><code id="code-${uniqueId}">${sanitizedContent}</code></pre></div>`;
         };
         
-        const DetailCard = ({ title, content }) => `
-            <div class="bg-slate-800/50 rounded-lg">
-                <h4 class="text-sm font-semibold text-slate-300 px-4 py-2 border-b border-slate-700/50">${title}</h4>
-                <div class="p-4">${content}</div>
-            </div>
-        `;
+        const DetailCard = ({ title, content }) => `<div class="bg-slate-800/50 rounded-lg"><h4 class="text-sm font-semibold text-slate-300 px-4 py-2 border-b border-slate-700/50">${title}</h4><div class="p-4">${content}</div></div>`;
 
         // --- RENDER FUNCTIONS ---
         function renderSessionList() {
             const container = document.getElementById('session-list');
-            container.innerHTML = db.sessions.map(session => `
-                <button data-session-id="${session.session_id}" class="session-button w-full text-left p-3 rounded-lg transition-colors flex items-start space-x-3 ${state.selectedSessionId === session.session_id ? 'bg-slate-700/50' : 'hover:bg-slate-800/60'}">
-                    ${StatusIndicator(session.status)}
-                    <div class="flex-1 overflow-hidden">
-                        <p class="font-semibold text-sm text-white truncate">${session.session_id}</p>
-                        <p class="text-xs text-slate-400">${new Date(session.start_time).toLocaleString()}</p>
+            container.innerHTML = db.sessions.map(session => `<button data-session-id="${session.session_id}" class="session-button w-full text-left p-3 rounded-lg transition-colors flex items-start space-x-3 ${state.selectedSessionId === session.session_id ? 'bg-slate-700/50' : 'hover:bg-slate-800/60'}">${StatusIndicator(session.status)}<div class="flex-1 overflow-hidden"><p class="font-semibold text-sm text-white truncate">${session.session_id}</p><p class="text-xs text-slate-400">${new Date(session.start_time).toLocaleString()}</p></div></button>`).join('');
+        }
+
+        const getIcon = (status) => {
+            switch (status) {
+                case 'Completed': return CheckCircleIcon('w-5 h-5');
+                case 'Failed': return XCircleIcon('w-5 h-5');
+                case 'In Progress': return ClockIcon('w-5 h-5');
+                default: return ClockIcon('w-5 h-5');
+            }
+        };
+
+        function renderFlowListView() {
+            const iterations = db.iterations.filter(i => i.session_id === state.selectedSessionId).sort((a,b) => a.iteration_number - b.iteration_number);
+            return `<div class="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar">
+                ${iterations.map(iter => `
+                    <div class="rounded-lg bg-slate-800/40 p-3">
+                        <h3 class="text-sm font-bold text-amber-400 mb-2 flex items-center">
+                            Iteration ${iter.iteration_number}
+                            ${iter.needs_retry ? `<span class="ml-auto text-xs font-semibold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full">RETRY SUGGESTED</span>` : ''}
+                        </h3>
+                        <div class="space-y-1">
+                            ${db.agent_runs.filter(r => r.iteration_id === iter.iteration_id).map(run => `
+                                <button data-run-id="${run.agent_run_id}" class="agent-run-button w-full p-2 text-left rounded-md flex items-center space-x-3 transition-colors ${state.selectedAgentRunId === run.agent_run_id ? 'bg-slate-700/80' : 'hover:bg-slate-700/40'}">
+                                    <div class="flex-shrink-0 ${run.status === 'Failed' ? 'text-red-400' : run.status === 'Completed' ? 'text-green-400' : 'text-blue-400'}">${getIcon(run.status)}</div>
+                                    <div class="flex-1 text-sm font-medium text-slate-200">${run.agent_name}</div>
+                                </button>
+                            `).join('')}
+                        </div>
                     </div>
-                </button>
-            `).join('');
+                `).join('')}
+            </div>`;
+        }
+        
+        function renderFlowDiagramView() {
+            const iterations = db.iterations.filter(i => i.session_id === state.selectedSessionId).sort((a,b) => a.iteration_number - b.iteration_number);
+            return `<div class="flex-1 p-6 space-y-12 overflow-y-auto custom-scrollbar">
+                ${iterations.map((iter, iterIndex) => {
+                    const agentRuns = db.agent_runs.filter(r => r.iteration_id === iter.iteration_id);
+                    return `
+                    <div class="relative">
+                        <!-- Iteration Header -->
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-sm">${iter.iteration_number}</div>
+                            <h3 class="font-bold text-amber-400">Iteration ${iter.iteration_number}</h3>
+                        </div>
+                        <!-- Agent Nodes -->
+                        <div class="flex items-center space-x-4">
+                            ${agentRuns.map((run, runIndex) => `
+                                <div class="flex items-center">
+                                    ${runIndex > 0 ? `<div class="w-8 h-0.5 bg-slate-600"></div>` : ''}
+                                    <button data-run-id="${run.agent_run_id}" class="agent-run-button flex-shrink-0 w-32 h-20 p-2 rounded-lg border flex flex-col justify-center items-center text-center transition-all ${state.selectedAgentRunId === run.agent_run_id ? 'bg-slate-700 border-amber-400' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}">
+                                        <div class="mb-1 ${run.status === 'Failed' ? 'text-red-400' : run.status === 'Completed' ? 'text-green-400' : 'text-blue-400'}">${getIcon(run.status)}</div>
+                                        <p class="text-xs font-semibold text-slate-200 leading-tight">${run.agent_name}</p>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <!-- Retry Arrow -->
+                        ${iter.needs_retry && iterIndex < iterations.length - 1 ? `
+                            <div class="absolute h-12 w-0.5 bg-amber-400/50" style="left: calc(100% - 4rem); top: 100%;"></div>
+                            <div class="absolute h-0.5 w-24 bg-amber-400/50" style="left: calc(100% - 10rem); top: calc(100% + 3rem);"></div>
+                            <div class="absolute h-12 w-0.5 bg-amber-400/50" style="left: calc(100% - 10rem); top: calc(100% + 3rem);">
+                                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-0 h-0 border-l-4 border-r-4 border-t-6 border-l-transparent border-r-transparent border-t-amber-400"></div>
+                            </div>
+                            <div class="absolute text-amber-300 text-xs font-bold" style="top: calc(100% + 2.25rem); left: calc(100% - 7rem);">RETRY</div>
+                        ` : ''}
+                    </div>
+                `}).join('')}
+            </div>`;
         }
 
         function renderFlow() {
             const session = db.sessions.find(s => s.session_id === state.selectedSessionId);
-            const iterations = db.iterations.filter(i => i.session_id === state.selectedSessionId).sort((a,b) => a.iteration_number - b.iteration_number);
             const container = document.getElementById('flow-column');
             
-            const getStatusClasses = (status) => {
-                switch (status) {
-                    case 'Completed': return 'border-green-400/50 bg-green-900/30 text-green-300';
-                    case 'Failed': return 'border-red-400/50 bg-red-900/30 text-red-300';
-                    case 'In Progress': return 'border-blue-400/50 bg-blue-900/30 text-blue-300';
-                    default: return 'border-slate-600 bg-slate-800 text-slate-300';
-                }
-            };
-            
-            const getIcon = (status) => {
-                switch (status) {
-                    case 'Completed': return CheckCircleIcon('w-5 h-5');
-                    case 'Failed': return XCircleIcon('w-5 h-5');
-                    case 'In Progress': return ClockIcon('w-5 h-5');
-                    default: return ClockIcon('w-5 h-5');
-                }
-            };
-
             container.innerHTML = `
-                <div class="p-4 border-b border-slate-800 flex-shrink-0">
-                    <h2 class="font-bold text-white text-lg truncate">${session.session_id}</h2>
-                    <p class="text-sm text-slate-400">Iterations & Agent Runs</p>
+                <div class="p-4 border-b border-slate-800 flex-shrink-0 flex justify-between items-center">
+                    <div>
+                        <h2 class="font-bold text-white text-lg truncate">${session.session_id}</h2>
+                        <p class="text-sm text-slate-400">Execution Details</p>
+                    </div>
+                    <div class="flex items-center bg-slate-800/80 p-1 rounded-lg">
+                        <button data-view-mode="list" class="flow-view-button px-2 py-1 text-xs font-semibold rounded-md flex items-center transition-colors ${state.flowViewMode === 'list' ? 'bg-amber-500/80 text-white' : 'text-slate-300 hover:bg-slate-700/50'}">
+                            ${ListBulletIcon('w-4 h-4 mr-1.5')} List
+                        </button>
+                        <button data-view-mode="flow" class="flow-view-button px-2 py-1 text-xs font-semibold rounded-md flex items-center transition-colors ${state.flowViewMode === 'flow' ? 'bg-amber-500/80 text-white' : 'text-slate-300 hover:bg-slate-700/50'}">
+                            ${ShareIcon('w-4 h-4 mr-1.5')} Flow
+                        </button>
+                    </div>
                 </div>
-                <div class="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar">
-                    ${iterations.map(iter => `
-                        <div class="rounded-lg bg-slate-800/40 p-3">
-                            <h3 class="text-sm font-bold text-amber-400 mb-2 flex items-center">
-                                Iteration ${iter.iteration_number}
-                                ${iter.needs_retry ? `<span class="ml-auto text-xs font-semibold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full">RETRY SUGGESTED</span>` : ''}
-                            </h3>
-                            <div class="space-y-1">
-                                ${db.agent_runs.filter(r => r.iteration_id === iter.iteration_id).map(run => `
-                                    <button data-run-id="${run.agent_run_id}" class="agent-run-button w-full p-2 text-left rounded-md flex items-center space-x-3 transition-colors ${state.selectedAgentRunId === run.agent_run_id ? 'bg-slate-700/80' : 'hover:bg-slate-700/40'}">
-                                        <div class="flex-shrink-0 ${run.status === 'Failed' ? 'text-red-400' : run.status === 'Completed' ? 'text-green-400' : 'text-blue-400'}">${getIcon(run.status)}</div>
-                                        <div class="flex-1 text-sm font-medium text-slate-200">${run.agent_name}</div>
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+                ${state.flowViewMode === 'list' ? renderFlowListView() : renderFlowDiagramView()}
             `;
         }
 
@@ -393,19 +511,9 @@ LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
                     <p class="text-sm text-slate-400">Agent Run Details</p>
                 </div>
                 <div class="flex-1 p-4 space-y-4 overflow-y-auto custom-scrollbar">
-                    ${DetailCard({ title: 'Status & Timings', content: `
-                        <ul class="text-sm space-y-1.5">
-                            <li class="flex justify-between"><span>Status:</span> <span class="font-semibold text-white capitalize">${run.status}</span></li>
-                            <li class="flex justify-between"><span>Start Time:</span> <span class="font-semibold text-white">${run.start_time ? new Date(run.start_time).toLocaleTimeString() : 'N/A'}</span></li>
-                            <li class="flex justify-between"><span>End Time:</span> <span class="font-semibold text-white">${run.end_time ? new Date(run.end_time).toLocaleTimeString() : 'N/A'}</span></li>
-                            <li class="flex justify-between"><span>Duration:</span> <span class="font-semibold text-white">${duration}</span></li>
-                        </ul>
-                    `})}
-                    
+                    ${DetailCard({ title: 'Status & Timings', content: `<ul class="text-sm space-y-1.5"><li class="flex justify-between"><span>Status:</span> <span class="font-semibold text-white capitalize">${run.status}</span></li><li class="flex justify-between"><span>Start Time:</span> <span class="font-semibold text-white">${run.start_time ? new Date(run.start_time).toLocaleTimeString() : 'N/A'}</span></li><li class="flex justify-between"><span>End Time:</span> <span class="font-semibold text-white">${run.end_time ? new Date(run.end_time).toLocaleTimeString() : 'N/A'}</span></li><li class="flex justify-between"><span>Duration:</span> <span class="font-semibold text-white">${duration}</span></li></ul>`})}
                     ${input ? DetailCard({ title: `Input: <span class="text-xs uppercase text-slate-400 font-normal">${input.input_type}</span>`, content: renderData(input, 'input') }) : ''}
-                    
                     ${output ? DetailCard({ title: `Output: <span class="text-xs uppercase text-slate-400 font-normal">${output.output_type}</span>`, content: renderData(output, 'output') }) : ''}
-
                     ${run.error_message ? DetailCard({ title: 'Error Message', content: `<pre class="text-sm text-red-300 whitespace-pre-wrap font-mono">${run.error_message}</pre>`}) : ''}
                 </div>
             `;
@@ -426,6 +534,7 @@ LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
                     const firstIteration = db.iterations.find(i => i.session_id === state.selectedSessionId);
                     const firstRun = db.agent_runs.find(r => r.iteration_id === firstIteration?.iteration_id);
                     state.selectedAgentRunId = firstRun?.agent_run_id || null;
+                    state.flowViewMode = 'list'; // Default to list view on session change
                     fullRender();
                 };
             });
@@ -438,16 +547,21 @@ LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
                     addEventListeners();
                 };
             });
+            
+            document.querySelectorAll('.flow-view-button').forEach(btn => {
+                btn.onclick = (e) => {
+                    state.flowViewMode = e.currentTarget.dataset.viewMode;
+                    renderFlow();
+                    addEventListeners();
+                }
+            });
 
             document.querySelectorAll('.copy-button').forEach(button => {
                 button.onclick = (e) => {
                     const btn = e.currentTarget;
                     const copyId = btn.dataset.copyId;
                     const [type, runId] = copyId.split('-');
-                    const data = type === 'input' 
-                        ? db.agent_inputs.find(i => i.agent_run_id === runId).input_data
-                        : db.agent_outputs.find(o => o.agent_run_id === runId).output_data;
-
+                    const data = type === 'input' ? db.agent_inputs.find(i => i.agent_run_id === runId).input_data : db.agent_outputs.find(o => o.agent_run_id === runId).output_data;
                     navigator.clipboard.writeText(data).then(() => {
                         btn.innerHTML = CheckCircleIcon('w-4 h-4 text-green-400');
                         setTimeout(() => { btn.innerHTML = ClipboardIcon('w-4 h-4'); }, 2000);
@@ -461,3 +575,4 @@ LEFT JOIN agent_outputs ao ON ao.agent_run_id = a.agent_run_id;
     </script>
 </body>
 </html>
+
