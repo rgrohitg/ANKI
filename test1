@@ -1,3 +1,40 @@
+
+Hi everyone,
+
+Today I’ll walk you through an application we built <ABOUT_PROJECT OVERVIEW>
+
+Now, while building the backend logic, we quickly realized something:
+We needed a UI to understand exactly how these agents were interacting — what context each one was receiving, how they were transforming it, and what outputs they were producing.
+
+So, we designed a proper database structure to store:
+
+Session details and iteration history
+
+Each agent’s inputs, outputs, and logs
+
+Metadata for orchestration and debugging
+
+And on top of that, we built a quick UI to visualize:
+
+The full chain of agent interactions
+
+What context was passed between them
+
+How decisions were made at each stage
+
+To make this UI truly effective, we applied a structured prompt engineering framework:
+
+1️⃣ Role – Tell the model exactly who it is in that moment (e.g., Converter Agent, Analyzer Agent).
+2️⃣ Task – Define exactly what the agent needs to do for that step.
+3️⃣ Context – Provide the constraints, boundaries, and relevant history.
+4️⃣ Reasoning – Encourage logical, step-by-step thinking before answering.
+5️⃣ Output – Clearly define the format and style of the expected result.
+6️⃣ Conditions – Define when the task is complete, so the agent knows it’s done.
+
+This approach gave us clarity, consistency, and predictable results — and when visualized in the UI, it made the whole orchestration process transparent and easy to follow.
+
+By the end, we had not just a conversion tool, but a full autonomous agentic pipeline where you can see every decision, every context exchange, and every result — all in one place.
+
 Agent Prompt Template
 This template is designed to structure system messages for autonomous agents, ensuring clarity, consistency, and predictable results. It is based on a six-part framework that defines an agent's purpose, context, and expected output.
 
