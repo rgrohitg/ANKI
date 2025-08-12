@@ -102,7 +102,41 @@ Your task is to build a complete, single-file React application to serve as a mo
 
 ### 3. Context
 * **Core Layout:** The application will have a top header and a main content area. The main content area is a three-column layout: a collapsible sidebar on the left, a central flow view, and a details panel on the right.
-* **Data Model:** The application will be powered by a mock API that provides data for sessions, iterations, and agent runs. This includes details like status, timestamps, inputs, and outputs.
+* **Data Model:** The application will be powered by a mock API that provides data for sessions, iterations, and agent runs. The data structure should be as follows:
+    * **`/api/sessions` (for the session list):**
+        ```json
+        [
+          {
+            "session_id": "sess_a4b1c2d3",
+            "start_time": "2025-07-22T21:00:00Z",
+            "status": "Completed",
+            "created_by": "user_a"
+          }
+        ]
+        ```
+    * **`/api/sessions/{sessionId}` (for the detailed view):**
+        ```json
+        {
+          "session_id": "sess_a4b1c2d3",
+          "status": "Completed",
+          "iterations": [
+            {
+              "iteration_id": "iter-1-1",
+              "iteration_number": 1,
+              "needs_retry": true,
+              "agent_runs": [
+                {
+                  "agent_run_id": "run-1-1-1",
+                  "agent_name": "Converter Agent",
+                  "status": "Completed",
+                  "input": {"input_data": "SELECT * FROM orders"},
+                  "output": {"output_data": "df = spark.table(\"orders\")"}
+                }
+              ]
+            }
+          ]
+        }
+        ```
 * **Header & Navigation:**
     * A fixed top header should display the brand name "Agentick Workflow" with a gradient text style.
     * A "burger" icon on the right should toggle a full-screen navigation overlay with links for "Home" and "Agent Settings".
@@ -156,6 +190,9 @@ Think step-by-step. First, design the overall application layout with a top head
 
 ### 5. Output
 Produce a single, complete, runnable React file. The code must use functional components and hooks. All styling must be done with Tailwind CSS classes directly in the JSX. Do not use any external CSS files. The final output should be the full `App.js` file, including the mock API and all components.
+
+### 6. Conditions
+The task is complete when the generated React code is a fully functional, responsive, and visually polished dashboard that accurately implements all the features and data models described in the context.
 
 ### 6. Conditions
 The task is complete when the generated React code is a fully functional, responsive, and visually polished dashboard that accurately implements all the features and data models described in the context.
