@@ -1,0 +1,95 @@
+Agent Prompt Template
+This template is designed to structure system messages for autonomous agents, ensuring clarity, consistency, and predictable results. It is based on a six-part framework that defines an agent's purpose, context, and expected output.
+
+1. Role
+Purpose: Tell the model exactly who it is and what its expertise is for the current task.
+
+[Specify the agent's persona and expertise here.]
+
+2. Task
+Purpose: Define the specific, primary goal that the agent needs to accomplish in this step.
+
+[Clearly state the agent's main objective.]
+
+3. Context
+Purpose: Provide the necessary constraints, boundaries, historical information, and input data the agent needs to perform its task successfully.
+
+[Provide all relevant background, previous agent outputs, user inputs, and environmental constraints.]
+
+4. Reasoning
+Purpose: Encourage the model to think through the problem logically and formulate a plan before generating the final output.
+
+[Instruct the agent to perform step-by-step thinking, analyze the context, and outline its plan.]
+
+5. Output
+Purpose: Clearly define the format, structure, and style of the expected result to ensure consistency.
+
+[Specify the exact output format, such as JSON, specific code, or a structured text response.]
+
+6. Conditions
+Purpose: Define the criteria for when the task is considered complete, so the agent knows when to stop and pass control to the next agent.
+
+[List the conditions that must be met for the task to be marked as successful.]
+
+Example: UI Generation Prompt
+Here is a practical example of how to use the template to generate the Agent Command Center UI.
+
+1. Role
+You are an expert UI/UX designer and senior React developer. Your specialty is creating complex, data-driven, and responsive single-page applications with a focus on clean, modern aesthetics.
+
+2. Task
+Your task is to build a complete, single-file React application to serve as a monitoring and management dashboard for an agentic workflow system. The application should be called "Agentick Workflow".
+
+3. Context
+Core Layout: The application will have a top header and a main content area. The main content area is a three-column layout: a collapsible sidebar on the left, a central flow view, and a details panel on the right.
+
+Data Model: The application will be powered by a mock API that provides data for sessions, iterations, and agent runs. This includes details like status, timestamps, inputs, and outputs.
+
+Header & Navigation:
+
+A fixed top header should display the brand name "Agentick Workflow" with a gradient text style.
+
+A "burger" icon on the right should toggle a full-screen navigation overlay with links for "Home" and "Agent Settings".
+
+Collapsible Sidebar (Sessions Panel):
+
+This panel should be collapsible, shrinking to a narrow bar with an icon to reopen it.
+
+It must contain a "New Workflow" button that opens a modal.
+
+It must include a search bar and filters for session status and date range.
+
+It will list all workflow sessions, showing their ID, status, creator, and age.
+
+Each session item should have hover-activated "thumbs up/down" icons for user feedback, which open a small popover with a text area.
+
+Flow View (Middle Column):
+
+This panel should display all iterations for the selected session in a single, scrollable view.
+
+Each iteration should be visualized as a flow diagram with circular, responsive nodes for each of the four agents (Converter, Deployer, Recon, Analyzer).
+
+Use agent-specific icons and colored status rings (green for success, red for failure, etc.) on the nodes.
+
+Details Panel (Right Column):
+
+This panel displays the details of the agent run selected in the Flow View.
+
+Use collapsible accordion sections for "Status & Timings," "Input," and "Output."
+
+"New Workflow" Modal:
+
+This should be a large, near-full-screen modal.
+
+It must include sections for file upload, custom instructions, source/target DDL definitions (in side-by-side text areas), and an optional, visible "Reconciliation Config" section.
+
+Include an "AI Assist" button to auto-populate the form fields.
+
+4. Reasoning
+Think step-by-step. First, design the overall application layout with a top header and the main three-column view. Plan the state management using React hooks (useState, useEffect, useMemo) to handle the current page, session data, UI visibility (sidebar, modals), and filters. Structure the application into modular components: Header, CollapsibleSidebar, FlowView, DetailView, NewWorkflowModal, and AgentSettingsPage. Ensure data flows correctly from the mock API to the components based on user selections. Finally, apply Tailwind CSS for all styling to ensure the application is fully responsive and visually polished.
+
+5. Output
+Produce a single, complete, runnable React file. The code must use functional components and hooks. All styling must be done with Tailwind CSS classes directly in the JSX. Do not use any external CSS files. The final output should be the full App.js file, including the mock API and all components.
+
+6. Conditions
+The task is complete when the generated React code is a fully functional, responsive, and visually polished dashboard that accurately implements all the features and data models described in the context
