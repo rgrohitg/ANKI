@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Weekly Workout Plan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        @media print {
+            body {
+                width: 210mm; /* A4 width */
+                height: 297mm; /* A4 height */
+                margin: 0;
+                padding: 1rem;
+                overflow: hidden;
+            }
+            .container {
+                box-shadow: none;
+                padding: 1rem;
+            }
+            .superset-header {
+                box-shadow: none !important;
+            }
+            .workout-table th, .workout-table td {
+                border: 1px solid #d1d5db;
+                border-radius: 0;
+            }
+        }
+        :root {
+            --primary-color: #2563eb;
+            --background-color: #f9fafb;
+            --card-bg-color: #ffffff;
+            --text-color: #111827;
+            --light-text-color: #4b5563;
+            --superset-bg: #e5e7eb;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: var(--card-bg-color);
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .motivational-text {
+            text-align: center;
+            font-style: italic;
+            color: var(--light-text-color);
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        h2:first-of-type {
+            margin-top: 0;
+        }
+        .workout-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        .workout-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            background-color: var(--primary-color);
+            color: var(--card-bg-color);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .workout-table th, .workout-table td {
+            border: 1px solid #e5e7eb;
+        }
+        .workout-table td {
+            background-color: var(--card-bg-color);
+            padding: 1rem;
+            color: var(--light-text-color);
+        }
+        .exercise-title {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        .superset-header {
+            background-color: var(--superset-bg) !important;
+            color: var(--text-color);
+            font-weight: 600;
+            text-align: center;
+            padding: 0.75rem;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weekly Workout Plan</h1>
+        <p class="motivational-text">"Make your mind up that you will never give up."</p>
+
+        <h2>Monday Workout Plan</h2>
+        <table class="workout-table">
+            <thead>
+                <tr>
+                    <th>Exercise</th>
+                    <th>Sets</th>
+                    <th>Reps</th>
+                    <th>Tempo</th>
+                    <th>Rest</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="exercise-title">Mobility</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>5 mins</td>
+                    <td>A light warmup to prepare your body for the workout.</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Barbell Bench Press</td>
+                    <td>2</td>
+                    <td>6-8</td>
+                    <td>2-1-2</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Barbell Bench Press</td>
+                    <td>2</td>
+                    <td>10</td>
+                    <td>2-2-2</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="superset-header" colspan="6">Superset</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Dumbbell Seated Shoulder Press</td>
+                    <td>3</td>
+                    <td>8-10</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Dumbbell Lateral Raise</td>
+                    <td>3</td>
+                    <td>10</td>
+                    <td>2-1-2</td>
+                    <td>90s</td>
+                    <td>Repeat for a total of 3 sets.</td>
+                </tr>
+                <tr>
+                    <td class="superset-header" colspan="6">Superset</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Cable Rope Tricep Extension</td>
+                    <td>3</td>
+                    <td>10-12</td>
+                    <td>2-2-2</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Plate Weighted Sit Up</td>
+                    <td>3</td>
+                    <td>12-15</td>
+                    <td>1-1-2</td>
+                    <td>90s</td>
+                    <td>Repeat for a total of 3 sets.</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Hand-Release Push-Up</td>
+                    <td>3</td>
+                    <td>As many as possible</td>
+                    <td>-</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Tuesday Workout Plan</h2>
+        <table class="workout-table">
+            <thead>
+                <tr>
+                    <th>Exercise</th>
+                    <th>Sets</th>
+                    <th>Reps</th>
+                    <th>Tempo</th>
+                    <th>Rest</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="exercise-title">Mobility</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>5 mins</td>
+                    <td>A light warmup to prepare your body for the workout.</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Weighted Chin Up</td>
+                    <td>3</td>
+                    <td>4-6</td>
+                    <td>1-1-2</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Barbell Deadlift</td>
+                    <td>3</td>
+                    <td>4-6</td>
+                    <td>1-1-1</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Barbell Hip Thrust</td>
+                    <td>3</td>
+                    <td>8</td>
+                    <td>1-5-1</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Dumbbell Deadstop Single Arm Row</td>
+                    <td>3</td>
+                    <td>8 each side</td>
+                    <td>1-1-2</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="superset-header" colspan="6">Superset</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Seated Reverse Fly</td>
+                    <td>3</td>
+                    <td>10-12</td>
+                    <td>2-1-2</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Dumbbell Incline Bicep Curl</td>
+                    <td>3</td>
+                    <td>10-12</td>
+                    <td>2-1-2</td>
+                    <td>90s</td>
+                    <td>Repeat for a total of 3 sets.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Thursday Workout Plan</h2>
+        <table class="workout-table">
+            <thead>
+                <tr>
+                    <th>Exercise</th>
+                    <th>Sets</th>
+                    <th>Reps</th>
+                    <th>Tempo</th>
+                    <th>Rest</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="exercise-title">Mobility</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>5 mins</td>
+                    <td>A light warmup to prepare your body for the workout.</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Barbell Back Squat</td>
+                    <td>3</td>
+                    <td>6-8</td>
+                    <td>2-1-2</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="superset-header" colspan="6">Superset</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Dumbbell Incline Bench Press</td>
+                    <td>3</td>
+                    <td>6-8</td>
+                    <td>2-1-2</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Dumbbell Incline Bench Chest Fly</td>
+                    <td>3</td>
+                    <td>10</td>
+                    <td>2-2-2</td>
+                    <td>90s</td>
+                    <td>Repeat for a total of 3 sets.</td>
+                </tr>
+                <tr>
+                    <td class="superset-header" colspan="6">Superset</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Angled Machine Leg Press</td>
+                    <td>3</td>
+                    <td>10-12</td>
+                    <td>2-1-2</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Advanced Deadbug</td>
+                    <td>3</td>
+                    <td>4-6</td>
+                    <td>2-1-2</td>
+                    <td>90s</td>
+                    <td>Repeat for a total of 3 sets.</td>
+                </tr>
+                <tr>
+                    <td class="superset-header" colspan="6">Superset</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Dumbbell Lateral Raise</td>
+                    <td>3</td>
+                    <td>10</td>
+                    <td>2-2-2</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Dumbbell Skullcrushers</td>
+                    <td>3</td>
+                    <td>8-10</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Tricep Rope Extension</td>
+                    <td>3</td>
+                    <td>10-12</td>
+                    <td>2-2-2</td>
+                    <td>90s</td>
+                    <td>Repeat for a total of 3 sets.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Friday Workout Plan</h2>
+        <table class="workout-table">
+            <thead>
+                <tr>
+                    <th>Exercise</th>
+                    <th>Sets</th>
+                    <th>Reps</th>
+                    <th>Tempo</th>
+                    <th>Rest</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="exercise-title">Mobility</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>5 mins</td>
+                    <td>A light warmup to prepare your body for the workout.</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Plate Weighted Wide Grip Pull Up</td>
+                    <td>3</td>
+                    <td>4-6</td>
+                    <td>1-1-1</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Barbell High Pull</td>
+                    <td>3</td>
+                    <td>6-8</td>
+                    <td>2-1-2</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Lat Machine Parallel Grip Row</td>
+                    <td>3</td>
+                    <td>10-12</td>
+                    <td>2-1-2</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Chest-Supported Row</td>
+                    <td>3</td>
+                    <td>6-8</td>
+                    <td>1-2-2</td>
+                    <td>90s</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="superset-header" colspan="6">Superset</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Cable Rope Hammer Curl</td>
+                    <td>3</td>
+                    <td>10-12</td>
+                    <td>2-2-2</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td class="exercise-title">Plate Weighted Plank</td>
+                    <td>3</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>90s</td>
+                    <td>Hold for 1 min. Repeat for a total of 3 sets.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
