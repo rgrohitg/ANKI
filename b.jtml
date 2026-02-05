@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acme Corp Migration Studio (Complete)</title>
+    
+    <!-- React & Tailwind -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #e2e8f0; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        .animate-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #6366f1; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
+            <div class="loader" style="margin-bottom: 20px;"></div>
+            <h2 style="font-size: 1.25rem; font-weight: 600; color: white;">Loading Studio...</h2>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, Component } = React;
+
+        // --- 1. ERROR BOUNDARY ---
+        class ErrorBoundary extends Component {
+            constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            render() {
+                if (this.state.hasError) return <div className="p-8 text-red-400 bg-slate-900"><h1>Runtime Error</h1><pre>{this.state.error.toString()}</pre></div>;
+                return this.props.children; 
+            }
+        }
+
+        // --- 2. ICON SYSTEM ---
+        const ICON_PATHS = {
+            HardDrive: [<path key="1" d="M22 12H2M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11zM6 16h.01M10 16h.01" />],
+            BookOpen: [<path key="1" d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />],
+            Cloud: [<path key="1" d="M17.5 19c0-3.037-2.463-5.5-5.5-5.5S6.5 15.963 6.5 19H12M12 11c0-2.21 1.79-4 4-4s4 1.79 4 4M5 19a4 4 0 0 1-2.07-7.42" />],
+            Anchor: [<circle key="1" cx="12" cy="5" r="3" />, <line key="2" x1="12" y1="22" x2="12" y2="8" />, <path key="3" d="M5 12H2a10 10 0 0 0 20 0h-3" />],
+            Shield: [<path key="1" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />],
+            Cpu: [<rect key="1" x="4" y="4" width="16" height="16" rx="2" ry="2" />, <path key="2" d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />],
+            Terminal: [<polyline key="1" points="4 17 10 11 4 5" />, <line key="2" x1="12" y1="19" x2="20" y2="19" />],
+            Map: [<polygon key="1" points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />, <line key="2" x1="8" y1="2" x2="8" y2="18" />, <line key="3" x1="16" y1="6" x2="16" y2="22" />],
+            Box: [<path key="1" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />, <polyline key="2" points="3.27 6.96 12 12.01 20.73 6.96" />, <line key="3" x1="12" y1="22.08" x2="12" y2="12" />],
+            Server: [<rect key="1" x="2" y="2" width="20" height="8" rx="2" ry="2" />, <rect key="2" x="2" y="14" width="20" height="8" rx="2" ry="2" />, <line key="3" x1="6" y1="6" x2="6.01" y2="6" />, <line key="4" x1="6" y1="18" x2="6.01" y2="18" />],
+            Database: [<ellipse key="1" cx="12" cy="5" rx="9" ry="3" />, <path key="2" d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />, <path key="3" d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />],
+            Workflow: [<circle key="1" cx="12" cy="12" r="2" />, <path key="2" d="M12 2v2M12 20v2M20 12h2M2 12h2" />],
+            Lock: [<rect key="1" x="3" y="11" width="18" height="11" rx="2" ry="2" />, <path key="2" d="M7 11V7a5 5 0 0 1 10 0v4" />],
+            CheckCircle: [<path key="1" d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />, <polyline key="2" points="22 4 12 14.01 9 11.01" />],
+            User: [<path key="1" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />, <circle key="2" cx="12" cy="7" r="4" />],
+            Folder: [<path key="1" d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />],
+            FolderOpen: [<path key="1" d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />, <path key="2" d="M2 9h20" />],
+            FileCode: [<path key="1" d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />, <polyline key="2" points="14 2 14 8 20 8" />],
+            Menu: [<line key="1" x1="3" y1="12" x2="21" y2="12" />, <line key="2" x1="3" y1="6" x2="21" y2="6" />, <line key="3" x1="3" y1="18" x2="21" y2="18" />],
+            ChevronRight: [<polyline key="1" points="9 18 15 12 9 6" />],
+            ChevronDown: [<polyline key="1" points="6 9 12 15 18 9" />]
+        };
+
+        const Icon = ({ name, size = 16, className = "" }) => {
+            const paths = ICON_PATHS[name] || <circle cx="12" cy="12" r="10" strokeDasharray="4 4"/>;
+            return (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {paths}
+                </svg>
+            );
+        };
+
+        // --- 3. CONSTANTS ---
+        const MCP_TOOLS = [
+            { name: "fs-local", icon: "HardDrive", desc: "Local File Access" },
+            { name: "acme-knowledge", icon: "BookOpen", desc: "Search Tech Primer" },
+            { name: "terraform-registry", icon: "Cloud", desc: "Internal Modules" },
+            { name: "spinnaker-api", icon: "Anchor", desc: "CI/CD Pipelines" },
+            { name: "security-scanner", icon: "Shield", desc: "Vuln Check" }
+        ];
+
+        // --- 4. FILE TREE DATA & COMPONENT ---
+        const FILE_DATA = {
+            legacy: {
+                name: "LegacyApp.NET", type: "folder", isOpen: true,
+                children: [
+                    { name: "LegacyApp.sln", type: "file" },
+                    { name: "Web.config", type: "file" },
+                    { name: "Controllers", type: "folder", isOpen: false, children: [
+                        { name: "UserController.cs", type: "file" }
+                    ]}
+                ]
+            },
+            modern: {
+                name: "AcmeService (Gen)", type: "folder", isOpen: true,
+                children: [
+                    { name: "infra", type: "folder", isOpen: true, children: [
+                        { name: "main.tf", type: "file" },
+                        { name: "vars.tf", type: "file" }
+                    ]},
+                    { name: "src", type: "folder", isOpen: true, children: [
+                        { name: "main.py", type: "file" },
+                        { name: "db.py", type: "file" }
+                    ]},
+                    { name: "cicd", type: "folder", children: [
+                        { name: "spinnaker.json", type: "file" }
+                    ]}
+                ]
+            }
+        };
+
+        const FileNode = ({ item, depth }) => {
+            const [isOpen, setIsOpen] = useState(item.isOpen || false);
+            const isFolder = item.type === 'folder';
+            
+            return (
+                <div className="select-none">
+                    <div 
+                        className={`flex items-center gap-1.5 py-1 hover:bg-slate-800/50 cursor-pointer rounded px-1 transition-colors`}
+                        style={{ paddingLeft: `${depth * 12}px` }}
+                        onClick={(e) => { e.stopPropagation(); if(isFolder) setIsOpen(!isOpen); }}
+                    >
+                        {isFolder && <Icon name={isOpen ? "ChevronDown" : "ChevronRight"} size={10} className="text-slate-600"/>}
+                        {!isFolder && <div className="w-[10px]" />}
+                        
+                        <Icon 
+                            name={isFolder ? (isOpen ? "FolderOpen" : "Folder") : "FileCode"} 
+                            size={14} 
+                            className={isFolder ? (depth === 0 ? "text-yellow-500" : "text-yellow-600") : "text-blue-400"} 
+                        />
+                        <span className={`text-xs ${isFolder ? "text-slate-300 font-medium" : "text-slate-400"}`}>{item.name}</span>
+                    </div>
+                    {isFolder && isOpen && item.children && (
+                        <div>
+                            {item.children.map((child, i) => (
+                                <FileNode key={i} item={child} depth={depth + 1} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- 5. MAIN APP ---
+        const App = () => {
+            const [status, setStatus] = useState('idle');
+            const [activeTab, setActiveTab] = useState('tools');
+            const [logs, setLogs] = useState([]);
+            const [chat, setChat] = useState([{ role: 'agent', text: 'Migration Agent online. MCP Tools loaded.' }]);
+            const [activeTool, setActiveTool] = useState(null);
+            const [userConcern, setUserConcern] = useState("");
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const logsEndRef = useRef(null);
+
+            useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
+
+            const log = (text, type = 'info') => {
+                setLogs(prev => [...prev, { time: new Date().toLocaleTimeString('en-US',{hour12:false}), text, type }]);
+            };
+
+            const startAnalysis = () => {
+                setStatus('reading');
+                setActiveTab('tools');
+                setChat(p => [...p, { role: 'user', text: 'Start migration. Use "Tech Primer" standards.' }]);
+                
+                setTimeout(() => { setActiveTool('fs-local'); log('MCP: fs-local mounted at /src/legacy-app'); }, 1000);
+                setTimeout(() => { 
+                    setActiveTool('acme-knowledge'); 
+                    log('MCP: querying "acme-knowledge"...', 'warning'); 
+                    setChat(p => [...p, { role: 'agent', text: 'Requirement found: Use HashiCorp Vault injection.' }]);
+                }, 3000);
+                setTimeout(() => { 
+                    setStatus('planning'); setActiveTab('plan'); setActiveTool(null);
+                    setChat(p => [...p, { role: 'agent', text: 'Plan drafted. Please review.' }]);
+                }, 6000);
+            };
+
+            const submitApproval = () => {
+                setStatus('coding');
+                setChat(p => [...p, { role: 'user', text: userConcern || 'Proceed.' }]);
+                runCodingSequence();
+                setUserConcern('');
+            };
+
+            const runCodingSequence = () => {
+                setActiveTab('tools');
+                setTimeout(() => { setActiveTool('terraform-registry'); log('Pulling "acme-terraform-ecs-v2"...', 'info'); }, 2000);
+                setTimeout(() => { setActiveTool('security-scanner'); log('Validating db_connector.py... Passed.', 'success'); }, 4000);
+                setTimeout(() => { 
+                    setStatus('complete'); setActiveTab('preview'); setActiveTool(null);
+                    setChat(p => [...p, { role: 'agent', text: 'Migration complete.' }]);
+                }, 7000);
+            };
+
+            return (
+                <div className="h-screen w-full flex flex-col md:flex-row bg-[#0b0f19] text-slate-300 overflow-hidden">
+                    
+                    {/* LEFT SIDEBAR */}
+                    <div className={`${isSidebarOpen ? 'block' : 'hidden'} md:block w-full md:w-64 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col bg-[#0f1420] shrink-0 z-20 overflow-hidden`}>
+                        {/* MCP Tools Section */}
+                        <div className="p-4 border-b border-slate-800 flex-none">
+                            <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Active MCP Tools</h2>
+                            <div className="grid grid-cols-1 gap-2">
+                                {MCP_TOOLS.map(t => (
+                                    <div key={t.name} className={`flex items-center gap-3 p-2 rounded border transition-all ${activeTool === t.name ? 'bg-indigo-900/20 border-indigo-500 text-indigo-300' : 'bg-slate-900/50 border-slate-800 text-slate-500'}`}>
+                                        <Icon name={t.icon} size={14} />
+                                        <div className="overflow-hidden">
+                                            <div className="text-xs font-semibold truncate">{t.name}</div>
+                                            <div className="text-[10px] opacity-70 truncate">{t.desc}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* File Tree Section (Added Back!) */}
+                        <div className="flex-1 overflow-y-auto p-4 min-h-0">
+                            <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Project Files</h2>
+                            <div className="space-y-4">
+                                <div>
+                                    <div className="text-[10px] text-slate-600 mb-1 uppercase">Source</div>
+                                    <FileNode item={FILE_DATA.legacy} depth={0} />
+                                </div>
+                                
+                                {(status === 'complete' || status === 'coding') && (
+                                    <div className="animate-in">
+                                        <div className="text-[10px] text-emerald-600 mb-1 uppercase mt-4">Target (Generated)</div>
+                                        <FileNode item={FILE_DATA.modern} depth={0} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* CENTER WORKSPACE */}
+                    <div className="flex-1 flex flex-col min-w-0 bg-[#0b0f19]">
+                        <header className="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-[#0f1420] shrink-0">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-slate-400 p-1"><Icon name="Menu" size={20} /></button>
+                                <div className="p-1.5 bg-indigo-600 rounded text-white hidden sm:block"><Icon name="Cpu" size={18}/></div>
+                                <h1 className="font-semibold text-sm text-white truncate">Acme Migration Agent</h1>
+                            </div>
+                            <button onClick={startAnalysis} disabled={status !== 'idle'} className={`px-4 py-2 rounded text-xs font-bold whitespace-nowrap ${status === 'idle' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-600'}`}>{status === 'idle' ? 'Start' : status}</button>
+                        </header>
+
+                        <div className="h-10 border-b border-slate-800 flex items-center bg-[#0b0f19] overflow-x-auto shrink-0">
+                            {['tools', 'plan', 'preview'].map(t => (
+                                <button key={t} onClick={() => setActiveTab(t)} className={`h-full px-6 text-xs font-medium border-r border-slate-800 uppercase whitespace-nowrap ${activeTab === t ? 'bg-[#0f1420] text-indigo-400 border-t-2 border-t-indigo-500' : 'text-slate-500 hover:text-slate-300'}`}>{t}</button>
+                            ))}
+                        </div>
+
+                        <div className="flex-1 overflow-auto relative p-4 md:p-6">
+                            {activeTab === 'tools' && (
+                                <div className="space-y-2 font-mono text-xs break-all">
+                                    {logs.map((l, i) => (
+                                        <div key={i} className={`p-2 border-l-2 ${l.type === 'warning' ? 'border-yellow-500 bg-yellow-500/5' : l.type === 'success' ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-700'}`}>
+                                            <span className="opacity-50 mr-4 inline-block w-16 text-slate-500">{l.time}</span><span className="text-slate-300">{l.text}</span>
+                                        </div>
+                                    ))}
+                                    <div ref={logsEndRef} />
+                                </div>
+                            )}
+
+                            {activeTab === 'plan' && (
+                                <div className="max-w-3xl mx-auto space-y-6">
+                                    <h2 className="text-lg font-light text-white flex gap-2"><Icon name="Map" /> Architecture Plan</h2>
+                                    <div className="space-y-3">
+                                        {[
+                                            { t: "Infrastructure", old: "IIS", new: "AWS ECS", mod: "terraform-ecs-v2" },
+                                            { t: "Database", old: "SQL Server", new: "Postgres+Vault", mod: "db-secure" },
+                                            { t: "CI/CD", old: "Manual", new: "Spinnaker", mod: "pipeline-gold" }
+                                        ].map((p,i) => (
+                                            <div key={i} className="bg-[#161b26] border border-slate-800 rounded p-4 flex justify-between items-center">
+                                                <div>
+                                                    <div className="font-semibold text-slate-200 text-sm">{p.t}</div>
+                                                    <div className="text-xs text-slate-500 flex gap-2 mt-1"><span className="line-through">{p.old}</span><span className="text-indigo-400">→ {p.new}</span></div>
+                                                </div>
+                                                <div className="text-[10px] font-mono text-emerald-400 bg-emerald-900/20 px-2 py-1 rounded">{p.mod}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {status === 'planning' && (
+                                        <div className="bg-indigo-900/10 border border-indigo-500/30 rounded p-4">
+                                            <div className="text-sm font-bold text-indigo-300 mb-2">Review Required</div>
+                                            <textarea className="w-full bg-[#0b0f19] border border-slate-700 rounded p-2 text-sm mb-3" placeholder="Concerns?" value={userConcern} onChange={e=>setUserConcern(e.target.value)}></textarea>
+                                            <button onClick={submitApproval} className="px-4 py-2 bg-indigo-600 text-white rounded text-xs font-bold">Approve</button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'preview' && (
+                                <div className="h-full flex items-center justify-center">
+                                    {status === 'complete' ? (
+                                        <div className="bg-[#161b26] p-8 rounded-xl border border-emerald-500/30 text-center">
+                                            <div className="flex justify-center mb-4"><div className="p-3 bg-emerald-500/10 rounded-full text-emerald-400"><Icon name="CheckCircle" size={32}/></div></div>
+                                            <h2 className="text-xl text-white mb-2">Migration Successful</h2>
+                                            <button className="px-4 py-2 bg-emerald-600 text-white rounded text-xs font-bold">View PR</button>
+                                        </div>
+                                    ) : <div className="text-slate-600 flex flex-col items-center"><Icon name="Lock" size={32} className="opacity-20 mb-2"/><p>Locked</p></div>}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT SIDEBAR */}
+                    <div className="w-full md:w-80 h-48 md:h-auto border-t md:border-t-0 md:border-l border-slate-800 bg-[#0f1420] flex flex-col shrink-0">
+                        <div className="p-3 border-b border-slate-800 text-xs font-bold text-slate-500 uppercase tracking-widest">Agent Reasoning</div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                            {chat.map((c, i) => (
+                                <div key={i} className={`flex ${c.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[90%] p-2 rounded text-xs border ${c.role === 'user' ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-100' : 'bg-slate-800 border-slate-700 text-slate-300'}`}>
+                                        <div className="font-bold opacity-50 mb-0.5 uppercase text-[8px]">{c.role}</div>
+                                        {c.text}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
+    </script>
+</body>
+</html>
+
