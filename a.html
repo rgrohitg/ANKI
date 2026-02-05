@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acme Corp Migration Studio (Debug Mode)</title>
+    
+    <!-- React & Tailwind -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #e2e8f0; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        
+        /* Loading Spinner for non-react state */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #6366f1; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <!-- Fallback Content (Visible if React fails) -->
+    <div id="root">
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8;">
+            <div class="loader" style="margin-bottom: 20px;"></div>
+            <h2 style="font-size: 1.25rem; font-weight: 600; color: white;">System Initializing...</h2>
+            <p style="margin-top: 10px;">If this screen persists, JavaScript execution failed.</p>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        // --- 1. SETUP & ERROR BOUNDARY ---
+        const { useState, useEffect, useRef, Component } = React;
+
+        class ErrorBoundary extends Component {
+            constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="p-8 text-red-400 bg-slate-900 h-screen flex flex-col items-center justify-center">
+                            <h1 className="text-2xl font-bold mb-4">UI Runtime Error</h1>
+                            <pre className="bg-black p-4 rounded border border-red-900 text-xs overflow-auto max-w-2xl">{this.state.error.toString()}</pre>
+                            <button onClick={() => window.location.reload()} className="mt-6 px-4 py-2 bg-red-600 text-white rounded">Reload</button>
+                        </div>
+                    );
+                }
+                return this.props.children; 
+            }
+        }
+
+        // --- 2. ICON SYSTEM (SVG Path Data) ---
+        // Storing as strings/arrays to avoid JSX parsing issues at global scope
+        const ICON_PATHS = {
+            HardDrive: [<path key="1" d="M22 12H2M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11zM6 16h.01M10 16h.01" />],
+            BookOpen: [<path key="1" d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />],
+            Cloud: [<path key="1" d="M17.5 19c0-3.037-2.463-5.5-5.5-5.5S6.5 15.963 6.5 19H12M12 11c0-2.21 1.79-4 4-4s4 1.79 4 4M5 19a4 4 0 0 1-2.07-7.42" />],
+            Anchor: [<circle key="1" cx="12" cy="5" r="3" />, <line key="2" x1="12" y1="22" x2="12" y2="8" />, <path key="3" d="M5 12H2a10 10 0 0 0 20 0h-3" />],
+            Shield: [<path key="1" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />],
+            Cpu: [<rect key="1" x="4" y="4" width="16" height="16" rx="2" ry="2" />, <path key="2" d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />],
+            Terminal: [<polyline key="1" points="4 17 10 11 4 5" />, <line key="2" x1="12" y1="19" x2="20" y2="19" />],
+            Map: [<polygon key="1" points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />, <line key="2" x1="8" y1="2" x2="8" y2="18" />, <line key="3" x1="16" y1="6" x2="16" y2="22" />],
+            Box: [<path key="1" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />, <polyline key="2" points="3.27 6.96 12 12.01 20.73 6.96" />, <line key="3" x1="12" y1="22.08" x2="12" y2="12" />],
+            Server: [<rect key="1" x="2" y="2" width="20" height="8" rx="2" ry="2" />, <rect key="2" x="2" y="14" width="20" height="8" rx="2" ry="2" />, <line key="3" x1="6" y1="6" x2="6.01" y2="6" />, <line key="4" x1="6" y1="18" x2="6.01" y2="18" />],
+            Database: [<ellipse key="1" cx="12" cy="5" rx="9" ry="3" />, <path key="2" d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />, <path key="3" d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />],
+            Workflow: [<circle key="1" cx="12" cy="12" r="2" />, <path key="2" d="M12 2v2M12 20v2M20 12h2M2 12h2" />],
+            Lock: [<rect key="1" x="3" y="11" width="18" height="11" rx="2" ry="2" />, <path key="2" d="M7 11V7a5 5 0 0 1 10 0v4" />],
+            CheckCircle: [<path key="1" d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />, <polyline key="2" points="22 4 12 14.01 9 11.01" />],
+            User: [<path key="1" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />, <circle key="2" cx="12" cy="7" r="4" />],
+            UserCheck: [<path key="1" d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />, <circle key="2" cx="8.5" cy="7" r="4" />, <polyline key="3" points="17 11 19 13 23 9" />],
+            Edit: [<path key="1" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />, <path key="2" d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />],
+            Check: [<polyline key="1" points="20 6 9 17 4 12" />],
+            ArrowRight: [<line key="1" x1="5" y1="12" x2="19" y2="12" />, <polyline key="2" points="12 5 19 12 12 19" />],
+            Folder: [<path key="1" d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />],
+            Play: [<polygon key="1" points="5 3 19 12 5 21 5 3" />],
+            Menu: [<line key="1" x1="3" y1="12" x2="21" y2="12" />, <line key="2" x1="3" y1="6" x2="21" y2="6" />, <line key="3" x1="3" y1="18" x2="21" y2="18" />],
+            Loader2: [<path key="1" d="M21 12a9 9 0 1 1-6.219-8.56" />],
+            Box: [<path key="1" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />, <polyline key="2" points="3.27 6.96 12 12.01 20.73 6.96" />, <line key="3" x1="12" y1="22.08" x2="12" y2="12" />]
+        };
+
+        const Icon = ({ name, size = 16, className = "" }) => {
+            const paths = ICON_PATHS[name];
+            if (!paths) return <span className="text-red-500 text-[10px]">?</span>;
+            return (
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width={size} 
+                    height={size} 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    className={className}
+                >
+                    {paths}
+                </svg>
+            );
+        };
+
+        // --- 3. CONSTANTS ---
+        const MCP_TOOLS = [
+            { name: "fs-local", icon: "HardDrive", desc: "Local File Access" },
+            { name: "acme-knowledge", icon: "BookOpen", desc: "Search Tech Primer" },
+            { name: "terraform-registry", icon: "Cloud", desc: "Internal Modules" },
+            { name: "spinnaker-api", icon: "Anchor", desc: "CI/CD Pipelines" },
+            { name: "security-scanner", icon: "Shield", desc: "Vuln Check" }
+        ];
+
+        const INITIAL_PLAN = [
+            { title: "Infrastructure", current: "On-Prem IIS", proposed: "AWS ECS (Fargate)", module: "acme-terraform-ecs-v2", icon: "Server" },
+            { title: "Database", current: "SQL Server", proposed: "PostgreSQL + Vault", module: "acme-db-secure", icon: "Database" },
+            { title: "CI/CD", current: "Manual Publish", proposed: "Spinnaker Canary", module: "pipeline-gold", icon: "Workflow" }
+        ];
+
+        // --- 4. MAIN APP ---
+        const App = () => {
+            const [status, setStatus] = useState('idle');
+            const [activeTab, setActiveTab] = useState('tools');
+            const [logs, setLogs] = useState([]);
+            const [chat, setChat] = useState([{ role: 'agent', text: 'Migration Agent online. MCP Tools loaded.' }]);
+            const [plan, setPlan] = useState(INITIAL_PLAN);
+            const [activeTool, setActiveTool] = useState(null);
+            const [userConcern, setUserConcern] = useState("");
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+            const logsEndRef = useRef(null);
+            
+            useEffect(() => {
+                // Auto-scroll logs
+                if(logsEndRef.current) {
+                    logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, [logs]);
+
+            const log = (text, type = 'info') => {
+                const time = new Date().toLocaleTimeString('en-US', {hour12:false});
+                setLogs(prev => [...prev, { time, text, type }]);
+            };
+
+            const startAnalysis = () => {
+                setStatus('reading');
+                setActiveTab('tools');
+                setChat(p => [...p, { role: 'user', text: 'Start migration. Ensure you check the "Tech Primer" for security standards.' }]);
+                
+                // Sequence
+                setTimeout(() => { setActiveTool('fs-local'); log('MCP: fs-local mounted at /src/legacy-app'); }, 1000);
+                setTimeout(() => { 
+                    setActiveTool('acme-knowledge'); 
+                    log('MCP: querying "acme-knowledge" for standards...', 'warning'); 
+                    setChat(p => [...p, { role: 'agent', text: 'Reading "Engineering Tech Primer". Requirement: Use HashiCorp Vault injection.' }]);
+                }, 3000);
+                setTimeout(() => { 
+                    setStatus('planning'); setActiveTab('plan'); setActiveTool(null);
+                    setChat(p => [...p, { role: 'agent', text: 'I have drafted a plan. Please review it in the "Architecture Plan" tab.' }]);
+                }, 6000);
+            };
+
+            const submitApproval = () => {
+                setChat(p => [...p, { role: 'user', text: userConcern ? `Wait. ${userConcern}` : 'Plan looks good. Proceed.' }]);
+                setStatus('coding');
+                runCodingSequence();
+                setUserConcern('');
+            };
+
+            const runCodingSequence = () => {
+                setActiveTab('tools');
+                setTimeout(() => { setActiveTool('terraform-registry'); log('Pulling "acme-terraform-ecs-v2"...', 'info'); }, 2000);
+                setTimeout(() => { setActiveTool('security-scanner'); log('Validating db_connector.py... Passed.', 'success'); }, 4000);
+                setTimeout(() => { setActiveTool('spinnaker-api'); log('Generating pipeline config...', 'info'); }, 6000);
+                setTimeout(() => { 
+                    setStatus('complete'); setActiveTab('preview'); setActiveTool(null);
+                    setChat(p => [...p, { role: 'agent', text: 'Migration complete. Infrastructure and Pipelines generated.' }]);
+                }, 8000);
+            };
+
+            return (
+                <div className="h-screen w-full flex flex-col md:flex-row bg-[#0b0f19] text-slate-300 overflow-hidden">
+                    
+                    {/* LEFT SIDEBAR */}
+                    <div className={`${isSidebarOpen ? 'block' : 'hidden'} md:block w-full md:w-64 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col bg-[#0f1420] shrink-0 z-20`}>
+                        <div className="p-4">
+                            <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Active MCP Tools</h2>
+                            <div className="grid grid-cols-1 gap-2">
+                                {MCP_TOOLS.map(t => (
+                                    <div key={t.name} className={`flex items-center gap-3 p-2 rounded border transition-all ${activeTool === t.name ? 'bg-indigo-900/20 border-indigo-500 text-indigo-300' : 'bg-slate-900/50 border-slate-800 text-slate-500'}`}>
+                                        <Icon name={t.icon} size={14} />
+                                        <div className="overflow-hidden">
+                                            <div className="text-xs font-semibold truncate">{t.name}</div>
+                                            <div className="text-[10px] opacity-70 truncate">{t.desc}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* CENTER */}
+                    <div className="flex-1 flex flex-col min-w-0 bg-[#0b0f19]">
+                        {/* Header */}
+                        <header className="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-[#0f1420] shrink-0">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-slate-400 p-1">
+                                    <Icon name="Menu" size={20} /> {/* Assuming Menu icon exists or fallback */}
+                                </button>
+                                <div className="p-1.5 bg-indigo-600 rounded text-white hidden sm:block"><Icon name="Cpu" size={18}/></div>
+                                <h1 className="font-semibold text-sm text-white truncate">Acme Migration Agent</h1>
+                            </div>
+                            <button onClick={startAnalysis} disabled={status !== 'idle'} className={`px-4 py-2 rounded text-xs font-bold whitespace-nowrap ${status === 'idle' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-600'}`}>
+                                {status === 'idle' ? 'Start' : status}
+                            </button>
+                        </header>
+
+                        {/* Tabs */}
+                        <div className="h-10 border-b border-slate-800 flex items-center bg-[#0b0f19] overflow-x-auto shrink-0">
+                            {['tools', 'plan', 'preview'].map(t => (
+                                <button key={t} onClick={() => setActiveTab(t)} className={`h-full px-6 text-xs font-medium border-r border-slate-800 uppercase whitespace-nowrap ${activeTab === t ? 'bg-[#0f1420] text-indigo-400 border-t-2 border-t-indigo-500' : 'text-slate-500 hover:text-slate-300'}`}>
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Viewport */}
+                        <div className="flex-1 overflow-auto relative p-4 md:p-6">
+                            
+                            {/* CONSOLE */}
+                            {activeTab === 'tools' && (
+                                <div className="space-y-2 font-mono text-xs break-all">
+                                    {logs.length === 0 && <div className="text-slate-600 text-center mt-20">System Idle.</div>}
+                                    {logs.map((l, i) => (
+                                        <div key={i} className={`p-2 border-l-2 ${l.type === 'warning' ? 'border-yellow-500 bg-yellow-500/5' : l.type === 'success' ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-700'}`}>
+                                            <span className="opacity-50 mr-4 inline-block w-16 text-slate-500">{l.time}</span> 
+                                            <span className="text-slate-300">{l.text}</span>
+                                        </div>
+                                    ))}
+                                    <div ref={logsEndRef} />
+                                </div>
+                            )}
+
+                            {/* PLAN */}
+                            {activeTab === 'plan' && (
+                                <div className="max-w-3xl mx-auto">
+                                    <div className="space-y-4 mb-8">
+                                        {plan.map((p, i) => (
+                                            <div key={i} className="bg-[#161b26] border border-slate-800 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-3 bg-slate-800 rounded text-slate-400 shrink-0"><Icon name={p.icon} /></div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-slate-200">{p.title}</h3>
+                                                        <div className="text-xs text-slate-500 flex flex-wrap gap-2 mt-1">
+                                                            <span className="line-through">{p.current}</span>
+                                                            <span className="text-indigo-400">→ {p.proposed}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right text-xs font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded self-start sm:self-auto">{p.module}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {status === 'planning' && (
+                                        <div className="bg-indigo-900/10 border border-indigo-500/30 rounded-lg p-6">
+                                            <h3 className="text-sm font-bold text-indigo-300 mb-2">Human Verification Required</h3>
+                                            <textarea className="w-full bg-[#0b0f19] border border-slate-700 rounded p-3 text-sm text-slate-200 mb-4" placeholder="Type concerns..." value={userConcern} onChange={(e) => setUserConcern(e.target.value)}></textarea>
+                                            <button onClick={submitApproval} className="px-4 py-2 bg-indigo-600 text-white rounded text-xs font-bold w-full sm:w-auto">Submit Decision</button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* PREVIEW */}
+                            {activeTab === 'preview' && (
+                                <div className="h-full flex items-center justify-center text-center">
+                                    {status !== 'complete' ? (
+                                        <div className="text-slate-600"><Icon name="Lock" size={48} className="mx-auto mb-4 opacity-20"/><p>Preview locked.</p></div>
+                                    ) : (
+                                        <div className="bg-[#161b26] p-8 rounded-xl border border-emerald-500/30 w-full max-w-md">
+                                            <div className="flex justify-center mb-6"><div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400"><Icon name="CheckCircle" size={48}/></div></div>
+                                            <h2 className="text-2xl font-light text-white mb-2">Migration Successful</h2>
+                                            <p className="text-slate-400 mb-6">Ready for Pull Request.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT SIDEBAR (Chat) */}
+                    <div className="w-full md:w-80 h-48 md:h-auto border-t md:border-t-0 md:border-l border-slate-800 bg-[#0f1420] flex flex-col shrink-0">
+                        <div className="p-3 border-b border-slate-800 text-xs font-bold text-slate-500 uppercase tracking-widest">Agent Reasoning</div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {chat.map((c, i) => (
+                                <div key={i} className={`flex ${c.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[90%] p-3 rounded-lg text-xs border ${c.role === 'user' ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-100' : 'bg-slate-800 border-slate-700 text-slate-300'}`}>
+                                        <div className="font-bold opacity-50 mb-1 uppercase text-[10px]">{c.role}</div>
+                                        {c.text}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 5. RENDER ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            <ErrorBoundary>
+                <App />
+            </ErrorBoundary>
+        );
+    </script>
+</body>
+</html>
+
