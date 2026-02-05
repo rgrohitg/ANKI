@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acme Architect Studio</title>
+    
+    <!-- Core Libraries -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+        .animate-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Diagram Styles */
+        .diagram-box { fill: #161b22; stroke-width: 2px; }
+        .diagram-text { font-family: 'JetBrains Mono', monospace; font-size: 12px; fill: #e6edf3; }
+        .diagram-subtext { font-family: 'Inter', sans-serif; font-size: 10px; fill: #8b949e; }
+        .flow-line { stroke: #8b949e; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+        .flow-label { font-size: 10px; fill: #58a6ff; background: #0d1117; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS ---
+        const Icon = ({ name, size = 16, className = "" }) => {
+            const paths = {
+                Cpu: "M4 4h16v16H4z M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3",
+                Search: "M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35",
+                Server: "M2 2h20v8H2zM2 14h20v8H2zM6 6h.01M6 18h.01",
+                Database: "M12 2c5.5 0 10 1.5 10 3.5s-4.5 3.5-10 3.5S2 7.5 2 5.5 12 2z M2 5.5v7c0 2 4.5 3.5 10 3.5s10-1.5 10-3.5v-7 M2 12.5v7c0 2 4.5 3.5 10 3.5s10-1.5 10-3.5v-7",
+                ArrowRight: "M5 12h14M12 5l7 7-7 7",
+                Check: "M20 6L9 17l-5-5",
+                FileCode: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z M14 2v6h6",
+                Folder: "M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z",
+                Book: "M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5a2.5 2.5 0 010-5H20",
+                Settings: "M12 15a3 3 0 100-6 3 3 0 000 6z"
+            };
+            
+            return (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    <path d={paths[name] || "M12 12m-2 0a2 2 0 104 0a2 2 0 10-4 0"} />
+                </svg>
+            );
+        };
+
+        // --- COMPONENTS: DIAGRAMS ---
+        
+        const LegacyDiagram = () => (
+            <svg width="100%" height="300" viewBox="0 0 600 300" className="bg-[#010409] rounded border border-[#30363d]">
+                <defs>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#8b949e" /></marker>
+                </defs>
+                <text x="20" y="25" className="diagram-text" fill="#8b949e">CURRENT STATE: MONOLITHIC ARCHITECTURE</text>
+                
+                {/* IIS Server Box */}
+                <rect x="50" y="50" width="250" height="200" rx="4" className="diagram-box" stroke="#f0883e" strokeDasharray="4 4" />
+                <text x="60" y="70" className="diagram-text" fill="#f0883e">Windows Server (IIS)</text>
+
+                {/* Tightly Coupled Logic */}
+                <rect x="80" y="90" width="190" height="140" rx="4" className="diagram-box" stroke="#ff7b72" />
+                <text x="175" y="110" textAnchor="middle" className="diagram-text">.NET Framework Monolith</text>
+                
+                {/* Internal UI */}
+                <rect x="100" y="130" width="150" height="40" rx="2" fill="#21262d" />
+                <text x="175" y="155" textAnchor="middle" className="diagram-subtext">Razor Views (Server Side UI)</text>
+
+                {/* Internal Logic */}
+                <rect x="100" y="180" width="150" height="40" rx="2" fill="#21262d" />
+                <text x="175" y="205" textAnchor="middle" className="diagram-subtext">Business Logic (DLLs)</text>
+
+                {/* DB */}
+                <path d="M450,100 a30,10 0 1,1 60,0 a30,10 0 1,1 -60,0 v100 a30,10 0 1,0 60,0 v-100" fill="#161b22" stroke="#a5d6ff" strokeWidth="2" />
+                <text x="480" y="160" textAnchor="middle" className="diagram-text">SQL Server</text>
+
+                {/* Connections */}
+                <line x1="270" y1="200" x2="440" y2="200" className="flow-line" />
+                <text x="355" y="190" textAnchor="middle" className="diagram-subtext" fill="#58a6ff">ADO.NET (Tight Coupling)</text>
+            </svg>
+        );
+
+        const TargetDiagram = () => (
+            <svg width="100%" height="300" viewBox="0 0 600 300" className="bg-[#010409] rounded border border-[#30363d]">
+                <defs>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#8b949e" /></marker>
+                </defs>
+                <text x="20" y="25" className="diagram-text" fill="#3fb950">TARGET STATE: DECOUPLED MICROSERVICES</text>
+                
+                {/* Client Box */}
+                <rect x="20" y="100" width="100" height="80" rx="4" className="diagram-box" stroke="#a5d6ff" />
+                <text x="70" y="130" textAnchor="middle" className="diagram-text">Browser</text>
+                <text x="70" y="150" textAnchor="middle" className="diagram-subtext">React SPA</text>
+
+                {/* Flow 1 */}
+                <line x1="120" y1="140" x2="180" y2="140" className="flow-line" />
+                <text x="150" y="130" textAnchor="middle" className="diagram-subtext" fill="#a5d6ff">JSON/REST</text>
+
+                {/* Cloud Boundary */}
+                <rect x="180" y="50" width="280" height="200" rx="4" className="diagram-box" stroke="#f0883e" strokeDasharray="4 4" />
+                <text x="190" y="70" className="diagram-text" fill="#f0883e">AWS ECS Cluster</text>
+
+                {/* API Container */}
+                <rect x="230" y="100" width="180" height="80" rx="4" className="diagram-box" stroke="#3fb950" />
+                <text x="320" y="130" textAnchor="middle" className="diagram-text">Python API Service</text>
+                <text x="320" y="150" textAnchor="middle" className="diagram-subtext">FastAPI / Uvicorn</text>
+
+                {/* Flow 2 */}
+                <line x1="410" y1="140" x2="480" y2="140" className="flow-line" />
+                <text x="445" y="130" textAnchor="middle" className="diagram-subtext">Async/ORM</text>
+
+                {/* DB */}
+                <path d="M480,100 a30,10 0 1,1 60,0 a30,10 0 1,1 -60,0 v80 a30,10 0 1,0 60,0 v-80" fill="#161b22" stroke="#a5d6ff" strokeWidth="2" />
+                <text x="510" y="150" textAnchor="middle" className="diagram-text">PostgreSQL</text>
+            </svg>
+        );
+
+        // --- MAIN APPLICATION ---
+
+        const App = () => {
+            // States: 'discovery', 'strategy', 'blueprint', 'execution'
+            const [phase, setPhase] = useState('discovery');
+            const [logs, setLogs] = useState([]);
+            const [chat, setChat] = useState([]);
+            const [activeTool, setActiveTool] = useState(null);
+            
+            // Strategy Form Data
+            const [strategy, setStrategy] = useState({
+                frontend: 'react',
+                backend: 'python',
+                deploy: 'ecs',
+                db: 'postgres'
+            });
+
+            // File Tree Simulation
+            const [files, setFiles] = useState({
+                legacy: ['Global.asax', 'Web.config', 'Controllers/HomeController.cs', 'Views/Home/Index.cshtml'],
+                target: []
+            });
+
+            const scrollRef = useRef(null);
+            const chatRef = useRef(null);
+
+            // Helpers
+            const log = (msg) => setLogs(p => [...p, `[${new Date().toLocaleTimeString('en-US',{hour12:false})}] ${msg}`]);
+            const agentSay = (msg) => setChat(p => [...p, {role: 'agent', text: msg}]);
+            const userSay = (msg) => setChat(p => [...p, {role: 'user', text: msg}]);
+            const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+            useEffect(() => { scrollRef.current?.scrollIntoView({behavior:'smooth'}); }, [logs]);
+            useEffect(() => { chatRef.current?.scrollIntoView({behavior:'smooth'}); }, [chat]);
+
+            // --- WORKFLOW ENGINES ---
+
+            const runDiscovery = async () => {
+                log("Initializing MCP: fs-reader...");
+                setActiveTool("fs-reader");
+                await wait(800);
+                log("Scanning ./source/legacy...");
+                await wait(1000);
+                log("Parsing .csproj and Web.config...");
+                await wait(1000);
+                setActiveTool(null);
+                agentSay("I've analyzed the source. It's a classic .NET Framework Monolith.");
+                agentSay("The UI (Razor) is tightly coupled to the backend controllers, and it connects directly to SQL Server using ADO.NET.");
+                agentSay("I have drawn a diagram of the CURRENT state in the main window. Please review it.");
+            };
+
+            const submitStrategy = async () => {
+                userSay(`Target Architecture: ${strategy.frontend} + ${strategy.backend} on ${strategy.deploy}`);
+                setPhase('blueprint');
+                
+                agentSay("Understood. I will now consult the internal 'Kickstart' documentation to get the correct boilerplates.");
+                
+                await wait(1000);
+                setActiveTool("tech-primer-search");
+                log(`MCP: Searching confluence for '${strategy.deploy}-standard-deploy'...`);
+                await wait(1000);
+                log("Found document: 'Engineering Standards v2.4'");
+                log("Requirement: All Python services must use Poetry and Pytest.");
+                
+                await wait(1000);
+                setActiveTool("kickstart-cli");
+                log(`MCP: Fetching boilerplate for ${strategy.backend}-fastapi...`);
+                log(`MCP: Fetching boilerplate for ${strategy.frontend}-vite...`);
+                log(`MCP: Fetching pipeline config for ${strategy.deploy}...`);
+                
+                await wait(1500);
+                setActiveTool(null);
+                
+                setFiles(p => ({
+                    ...p,
+                    target: [
+                        'jenkins/Jenkinsfile',
+                        'spinnaker/pipeline.json',
+                        'backend/pyproject.toml',
+                        'backend/src/main.py',
+                        'frontend/package.json',
+                        'frontend/src/App.tsx',
+                        'infra/terraform/main.tf'
+                    ]
+                }));
+                
+                agentSay("I have generated a Blueprint based on your choices and our internal standards.");
+                agentSay("Please review the proposed Folder Structure and Target Architecture Diagram.");
+                agentSay("Click 'Execute Migration' when you are ready to generate the code.");
+            };
+
+            const runExecution = async () => {
+                setPhase('execution');
+                userSay("Looks good. Execute migration.");
+                agentSay("Starting code generation...");
+                
+                await wait(1000);
+                log("Generating backend/src/main.py...");
+                await wait(800);
+                log("Generating frontend/src/App.tsx...");
+                await wait(800);
+                log("Configuring Jenkins pipeline...");
+                await wait(800);
+                log("Running 'poetry install'...");
+                log("Running 'npm install'...");
+                
+                agentSay("Migration artifacts generated. Ready for PR.");
+            };
+
+            return (
+                <div className="flex flex-col h-screen w-full bg-[#0d1117] text-[#c9d1d9] overflow-hidden text-sm">
+                    {/* TOP BAR */}
+                    <header className="h-14 border-b border-[#30363d] bg-[#161b22] flex items-center justify-between px-6 shrink-0">
+                        <div className="flex items-center gap-3">
+                            <div className="p-1.5 bg-blue-600 rounded text-white"><Icon name="Cpu" size={18}/></div>
+                            <h1 className="font-semibold text-white">Acme Architect Studio</h1>
+                            <div className="flex gap-1 ml-4">
+                                {['Discovery', 'Strategy', 'Blueprint', 'Execution'].map((p, i) => {
+                                    const phases = ['discovery', 'strategy', 'blueprint', 'execution'];
+                                    const isActive = phases.indexOf(phase) === i;
+                                    const isDone = phases.indexOf(phase) > i;
+                                    return (
+                                        <div key={p} className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs ${isActive ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : isDone ? 'text-green-400' : 'text-[#484f58]'}`}>
+                                            <span className="font-bold">{i+1}</span> {p}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* MAIN CONTENT */}
+                    <div className="flex-1 flex min-h-0">
+                        
+                        {/* LEFT: CONTEXT & TOOLS */}
+                        <div className="w-72 border-r border-[#30363d] bg-[#0d1117] flex flex-col">
+                            <div className="p-3 border-b border-[#30363d] uppercase text-xs font-bold text-[#8b949e]">System Context</div>
+                            
+                            {/* File Tree */}
+                            <div className="flex-1 overflow-y-auto p-2">
+                                <div className="mb-4">
+                                    <div className="flex items-center gap-2 text-[#e6edf3] px-2 py-1 bg-[#161b22] rounded mb-1">
+                                        <Icon name="Search" size={12}/> <span>Source (Legacy)</span>
+                                    </div>
+                                    <div className="pl-4 space-y-1">
+                                        {files.legacy.map(f => (
+                                            <div key={f} className="flex items-center gap-2 text-[#8b949e]">
+                                                <Icon name={f.includes('.') ? "FileCode" : "Folder"} size={12}/> {f}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {(phase === 'blueprint' || phase === 'execution') && (
+                                    <div className="animate-in">
+                                        <div className="flex items-center gap-2 text-[#e6edf3] px-2 py-1 bg-[#161b22] rounded mb-1">
+                                            <Icon name="Server" size={12}/> <span>Target (Proposed)</span>
+                                        </div>
+                                        <div className="pl-4 space-y-1">
+                                            {files.target.map(f => (
+                                                <div key={f} className="flex items-center gap-2 text-green-400">
+                                                    <Icon name={f.includes('.') ? "FileCode" : "Folder"} size={12}/> {f}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Active Tool Indicator */}
+                            <div className="h-32 border-t border-[#30363d] p-3 bg-[#010409]">
+                                <div className="text-xs font-bold text-[#8b949e] uppercase mb-2">MCP Activity</div>
+                                {activeTool ? (
+                                    <div className="flex items-center gap-3 text-blue-400 animate-pulse">
+                                        <Icon name="Settings" size={16} className="animate-spin"/>
+                                        <div>
+                                            <div className="font-bold">{activeTool}</div>
+                                            <div className="text-xs text-[#8b949e]">Executing...</div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-[#484f58] text-xs italic">No tools running.</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* CENTER: CANVAS */}
+                        <div className="flex-1 bg-[#0d1117] flex flex-col relative overflow-hidden">
+                            {/* Toolbar */}
+                            <div className="h-10 border-b border-[#30363d] flex items-center px-4 gap-4 bg-[#010409]">
+                                <span className="font-bold text-[#8b949e]">VIEW:</span>
+                                <span className={`cursor-pointer ${phase === 'discovery' ? 'text-white' : 'text-[#484f58]'}`}>Legacy Analysis</span>
+                                <span className={`cursor-pointer ${phase === 'strategy' ? 'text-white' : 'text-[#484f58]'}`}>Migration Strategy</span>
+                                <span className={`cursor-pointer ${phase === 'blueprint' ? 'text-white' : 'text-[#484f58]'}`}>Architecture Blueprint</span>
+                            </div>
+
+                            <div className="flex-1 overflow-auto p-8">
+                                
+                                {/* DISCOVERY PHASE */}
+                                {phase === 'discovery' && (
+                                    <div className="animate-in max-w-4xl mx-auto">
+                                        <h2 className="text-xl font-light mb-4 text-[#e6edf3]">Legacy System Analysis</h2>
+                                        <div className="mb-4 text-[#8b949e]">
+                                            Analysis Status: <span className="text-green-400">COMPLETE</span>
+                                        </div>
+                                        <LegacyDiagram />
+                                        <div className="mt-6 flex justify-center">
+                                            <button onClick={() => setPhase('strategy')} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 font-bold shadow-lg shadow-blue-900/20">
+                                                Design Migration Strategy &rarr;
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* STRATEGY PHASE */}
+                                {phase === 'strategy' && (
+                                    <div className="animate-in max-w-2xl mx-auto bg-[#161b22] border border-[#30363d] rounded-lg p-6">
+                                        <h2 className="text-xl font-light mb-6 text-white border-b border-[#30363d] pb-4">Target Architecture Strategy</h2>
+                                        
+                                        <div className="space-y-6">
+                                            <div>
+                                                <label className="block text-xs font-bold text-[#8b949e] uppercase mb-2">Frontend Framework</label>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <button onClick={() => setStrategy(s=>({...s, frontend:'react'}))} className={`p-3 rounded border text-left ${strategy.frontend==='react' ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-[#30363d] text-[#8b949e]'}`}>React (Vite)</button>
+                                                    <button onClick={() => setStrategy(s=>({...s, frontend:'angular'}))} className={`p-3 rounded border text-left ${strategy.frontend==='angular' ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-[#30363d] text-[#8b949e]'}`}>Angular</button>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-[#8b949e] uppercase mb-2">Backend Service</label>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <button onClick={() => setStrategy(s=>({...s, backend:'python'}))} className={`p-3 rounded border text-left ${strategy.backend==='python' ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-[#30363d] text-[#8b949e]'}`}>Python (FastAPI)</button>
+                                                    <button onClick={() => setStrategy(s=>({...s, backend:'java'}))} className={`p-3 rounded border text-left ${strategy.backend==='java' ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-[#30363d] text-[#8b949e]'}`}>Java (Spring Boot)</button>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-[#8b949e] uppercase mb-2">Deployment Target</label>
+                                                <select className="w-full bg-[#0d1117] border border-[#30363d] rounded p-2 text-white" value={strategy.deploy} onChange={e=>setStrategy(s=>({...s, deploy:e.target.value}))}>
+                                                    <option value="ecs">AWS ECS (Fargate)</option>
+                                                    <option value="eks">AWS EKS (Kubernetes)</option>
+                                                    <option value="cloudrun">Google Cloud Run</option>
+                                                </select>
+                                            </div>
+
+                                            <button onClick={submitStrategy} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded font-bold mt-4">
+                                                Generate Blueprint & Folder Structure
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* BLUEPRINT PHASE */}
+                                {phase === 'blueprint' && (
+                                    <div className="animate-in max-w-4xl mx-auto space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="text-xl font-light text-[#e6edf3]">Proposed Solution Blueprint</h2>
+                                            <button onClick={runExecution} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 font-bold flex items-center gap-2">
+                                                <Icon name="Check"/> Approve & Execute
+                                            </button>
+                                        </div>
+                                        
+                                        <TargetDiagram />
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-[#161b22] border border-[#30363d] p-4 rounded">
+                                                <h3 className="text-xs font-bold text-[#8b949e] uppercase mb-2">Boilerplate Sources</h3>
+                                                <ul className="text-xs space-y-2">
+                                                    <li className="flex items-center gap-2 text-[#c9d1d9]"><Icon name="Book" size={12}/> Using 'Kickstart-Python-V4'</li>
+                                                    <li className="flex items-center gap-2 text-[#c9d1d9]"><Icon name="Book" size={12}/> Using 'React-Enterprise-V2'</li>
+                                                </ul>
+                                            </div>
+                                            <div className="bg-[#161b22] border border-[#30363d] p-4 rounded">
+                                                <h3 className="text-xs font-bold text-[#8b949e] uppercase mb-2">DevOps Config</h3>
+                                                <ul className="text-xs space-y-2">
+                                                    <li className="text-blue-400">Jenkinsfile (Declarative)</li>
+                                                    <li className="text-blue-400">spinnaker/pipeline.json (Canary)</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* EXECUTION PHASE */}
+                                {phase === 'execution' && (
+                                    <div className="h-full bg-black border border-[#30363d] rounded p-4 font-mono text-xs overflow-auto">
+                                        <div className="text-[#8b949e] mb-2">-- MIGRATION AGENT LOGS --</div>
+                                        {logs.map((l, i) => <div key={i} className="text-[#c9d1d9] mb-1">{l}</div>)}
+                                        <div ref={scrollRef} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* RIGHT: CHAT */}
+                        <div className="w-80 bg-[#0d1117] border-l border-[#30363d] flex flex-col shrink-0">
+                            <div className="p-3 border-b border-[#30363d] uppercase text-xs font-bold text-[#8b949e]">Agent Chat</div>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                {phase === 'discovery' && logs.length === 0 && (
+                                    <button onClick={runDiscovery} className="w-full py-2 border border-[#30363d] rounded text-blue-400 hover:bg-[#161b22]">Start Analysis</button>
+                                )}
+                                {chat.map((c, i) => (
+                                    <div key={i} className={`flex ${c.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[90%] p-3 rounded text-xs border ${c.role === 'user' ? 'bg-blue-900/30 border-blue-800 text-blue-200' : 'bg-[#161b22] border-[#30363d] text-[#c9d1d9]'}`}>
+                                            <div className="font-bold opacity-50 mb-1 uppercase text-[8px]">{c.role}</div>
+                                            {c.text}
+                                        </div>
+                                    </div>
+                                ))}
+                                <div ref={chatRef} />
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
