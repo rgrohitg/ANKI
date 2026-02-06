@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acme Autonomous Architect</title>
+    
+    <!-- Libraries -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+        .animate-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Node Graph Styles */
+        .node-legacy { fill: #da3633; stroke: #f85149; }
+        .node-modern { fill: #238636; stroke: #3fb950; }
+        .node-doc { fill: #1f6feb; stroke: #58a6ff; }
+        .link { stroke: #30363d; stroke-width: 2px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS (Safe SVG) ---
+        const Icon = ({ name, size = 16, className = "" }) => {
+            const paths = {
+                Brain: "M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z",
+                Message: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+                Git: "M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4",
+                Book: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20",
+                Alert: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z",
+                Check: "M20 6 9 17l-5-5",
+                Play: "M5 3l14 9-14 9V3z",
+                Link: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71",
+                Search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35"
+            };
+            return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={paths[name]} /></svg>;
+        };
+
+        // --- MOCK DATA ---
+        const MCP_STATUS = [
+            { name: "mcp-git-bitbucket", status: "Connected", latency: "45ms" },
+            { name: "mcp-confluence", status: "Connected", latency: "120ms" },
+            { name: "mcp-jenkins", status: "Connected", latency: "60ms" },
+            { name: "mcp-security-scanner", status: "Idle", latency: "-" },
+        ];
+
+        // --- COMPONENTS ---
+
+        const KnowledgeGraph = ({ phase }) => (
+            <svg width="100%" height="300" viewBox="0 0 600 300" className="bg-[#010409] rounded border border-[#30363d]">
+                <defs>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="16" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#30363d" /></marker>
+                </defs>
+                
+                {/* Legacy Node */}
+                <circle cx="100" cy="150" r="30" className="node-legacy opacity-80" />
+                <text x="100" y="155" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">Legacy .NET</text>
+
+                {/* Doc Node */}
+                <g className={phase === 'init' ? 'opacity-30' : 'animate-in'}>
+                    <line x1="130" y1="150" x2="250" y2="100" className="link" markerEnd="url(#arrow)" />
+                    <circle cx="250" cy="100" r="25" className="node-doc" />
+                    <text x="250" y="105" textAnchor="middle" fill="white" fontSize="8">TechPrimer</text>
+                </g>
+
+                {/* Security Node */}
+                <g className={phase === 'init' ? 'opacity-30' : 'animate-in'} style={{animationDelay: '0.5s'}}>
+                    <line x1="130" y1="150" x2="250" y2="200" className="link" markerEnd="url(#arrow)" />
+                    <circle cx="250" cy="200" r="25" className="node-doc" />
+                    <text x="250" y="205" textAnchor="middle" fill="white" fontSize="8">OAuth2 Std</text>
+                </g>
+
+                {/* Target Node (Appears later) */}
+                {(phase === 'planning' || phase === 'coding') && (
+                    <g className="animate-in">
+                        <line x1="280" y1="100" x2="450" y2="150" className="link" markerEnd="url(#arrow)" />
+                        <line x1="280" y1="200" x2="450" y2="150" className="link" markerEnd="url(#arrow)" />
+                        <circle cx="450" cy="150" r="40" className="node-modern" />
+                        <text x="450" y="145" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">Target Arch</text>
+                        <text x="450" y="160" textAnchor="middle" fill="white" fontSize="8">(Python/ECS)</text>
+                    </g>
+                )}
+            </svg>
+        );
+
+        const App = () => {
+            const [phase, setPhase] = useState('init'); // init, discovery, questioning, planning, coding
+            const [logs, setLogs] = useState([]);
+            const [chat, setChat] = useState([{role: 'agent', text: 'Senior Architect Agent online. MCP Tools connected. Ready to start discovery.'}]);
+            const [questions, setQuestions] = useState([]); // Questions for user
+            const [activeFile, setActiveFile] = useState('graph');
+            const [userInput, setUserInput] = useState("");
+            
+            const logEndRef = useRef(null);
+
+            useEffect(() => { logEndRef.current?.scrollIntoView({behavior:'smooth'}); }, [logs]);
+
+            const log = (msg, tool=null) => setLogs(p => [...p, {msg, tool, time: new Date().toLocaleTimeString('en-US',{hour12:false})}]);
+            const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+            const runDiscovery = async () => {
+                setPhase('discovery');
+                setChat(p => [...p, {role: 'agent', text: 'Starting cognitive discovery. I am scanning the code and cross-referencing with our Confluence docs.'}]);
+                
+                log("Scanning ./src/legacy...", "fs-reader");
+                await wait(1000);
+                log("Reading http://wiki.acme/tech-primer...", "mcp-confluence");
+                await wait(800);
+                log("Reading http://wiki.acme/security-standards...", "mcp-confluence");
+                await wait(800);
+                log("Fetching 'kickstart-python-v4' boilerplate...", "mcp-bitbucket");
+                
+                await wait(1500);
+                setPhase('questioning');
+                setChat(p => [...p, {role: 'agent', text: 'I have analyzed the legacy AuthController.cs. It uses a hardcoded JWT secret.'}]);
+                setQuestions([
+                    {id: 1, text: "The TechPrimer mandates OAuth2/OIDC. Should I refactor this to use the 'Acme.Security.OIDC' pattern?", options: ["Yes, Refactor", "No, keep as-is (Not recommended)"]}
+                ]);
+            };
+
+            const handleAnswer = async (qId, answer) => {
+                setQuestions(prev => prev.filter(q => q.id !== qId));
+                setChat(p => [...p, {role: 'user', text: `Regarding Q${qId}: ${answer}`}]);
+                
+                log(`User Decision: ${answer}`);
+                
+                if (questions.length <= 1) {
+                    setPhase('planning');
+                    setChat(p => [...p, {role: 'agent', text: 'Understood. I am now generating the Architecture Blueprint based on your input and the Kickstart documentation.'}]);
+                    await wait(2000);
+                    setActiveFile('blueprint');
+                }
+            };
+
+            const runMigration = async () => {
+                setPhase('coding');
+                setChat(p => [...p, {role: 'user', text: 'Execute Plan.'}]);
+                setChat(p => [...p, {role: 'agent', text: 'Initializing OpenRewrite for Java dependencies...'}]);
+                log("Running OpenRewrite: org.openrewrite.java.spring.boot3...", "openrewrite-cli");
+                await wait(1500);
+                log("Generating Python scaffolding...", "python-transpiler");
+                await wait(1500);
+                log("Pushing to Bitbucket: feature/migration-v1", "mcp-bitbucket");
+                await wait(1000);
+                setChat(p => [...p, {role: 'agent', text: 'Migration branch pushed. Jenkins build triggered.'}]);
+            };
+
+            return (
+                <div className="flex h-screen w-full bg-[#0d1117] overflow-hidden text-sm">
+                    {/* LEFT: MCP & DOCS */}
+                    <div className="w-64 bg-[#0d1117] border-r border-[#30363d] flex flex-col shrink-0">
+                        <div className="p-3 border-b border-[#30363d] font-bold text-[#8b949e] flex items-center gap-2">
+                            <Icon name="Link" size={14}/> MCP Network
+                        </div>
+                        <div className="p-2 space-y-2">
+                            {MCP_STATUS.map(t => (
+                                <div key={t.name} className="flex items-center justify-between p-2 rounded bg-[#161b22] border border-[#30363d]">
+                                    <div className="flex flex-col">
+                                        <span className="text-[#c9d1d9] text-xs font-medium">{t.name}</span>
+                                        <span className={`text-[10px] ${t.status==='Connected'?'text-green-400':'text-[#8b949e]'}`}>{t.status}</span>
+                                    </div>
+                                    <div className="text-[10px] text-[#484f58] font-mono">{t.latency}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-auto p-3 border-t border-[#30363d]">
+                            <div className="font-bold text-[#8b949e] mb-2 flex items-center gap-2"><Icon name="Book" size={14}/> Context Loaded</div>
+                            <ul className="space-y-1 text-xs text-[#c9d1d9]">
+                                <li className="flex gap-2"><span className="text-green-400">✓</span> TechPrimer v2.4</li>
+                                <li className="flex gap-2"><span className="text-green-400">✓</span> Security-Std-OAuth</li>
+                                <li className="flex gap-2"><span className="text-green-400">✓</span> Kickstart-Python</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* CENTER: WORKSPACE */}
+                    <div className="flex-1 flex flex-col min-w-0 border-r border-[#30363d]">
+                        {/* Tabs */}
+                        <div className="h-10 bg-[#010409] border-b border-[#30363d] flex items-center">
+                            <button onClick={()=>setActiveFile('graph')} className={`px-4 h-full border-r border-[#30363d] ${activeFile==='graph' ? 'text-white border-t-2 border-t-[#f78166] bg-[#0d1117]' : 'text-[#8b949e]'}`}>Knowledge Graph</button>
+                            <button onClick={()=>setActiveFile('blueprint')} className={`px-4 h-full border-r border-[#30363d] ${activeFile==='blueprint' ? 'text-white border-t-2 border-t-[#238636] bg-[#0d1117]' : 'text-[#8b949e]'}`}>Migration Blueprint</button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 p-6 overflow-auto bg-[#0d1117]">
+                            {activeFile === 'graph' && (
+                                <div className="animate-in">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-lg font-light text-white">Cognitive Map</h2>
+                                        {phase === 'init' && <button onClick={runDiscovery} className="bg-blue-600 px-4 py-2 rounded text-white hover:bg-blue-500 font-bold flex items-center gap-2"><Icon name="Brain"/> Start Discovery</button>}
+                                    </div>
+                                    <KnowledgeGraph phase={phase} />
+                                    
+                                    <div className="mt-6 bg-[#161b22] border border-[#30363d] rounded p-4 h-48 overflow-auto font-mono text-xs">
+                                        <div className="text-[#8b949e] sticky top-0 bg-[#161b22] pb-2 mb-2 border-b border-[#30363d]">Agent Logs (MCP Traces)</div>
+                                        {logs.map((l, i) => (
+                                            <div key={i} className="mb-1">
+                                                <span className="text-[#484f58] mr-2">[{l.time}]</span>
+                                                {l.tool && <span className="text-blue-400 mr-2">[{l.tool}]</span>}
+                                                <span className="text-[#c9d1d9]">{l.msg}</span>
+                                            </div>
+                                        ))}
+                                        <div ref={logEndRef} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeFile === 'blueprint' && (
+                                <div className="animate-in max-w-3xl mx-auto">
+                                    <h2 className="text-xl font-light text-white mb-6">Proposed Architecture</h2>
+                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                        <div className="p-4 rounded bg-[#161b22] border border-[#30363d]">
+                                            <div className="text-[#8b949e] text-xs uppercase font-bold mb-2">Legacy (Monolith)</div>
+                                            <div className="text-[#c9d1d9]">.NET 4.8 MVC</div>
+                                            <div className="text-red-400 text-xs mt-1 flex items-center gap-1"><Icon name="Alert" size={12}/> Hardcoded JWT</div>
+                                        </div>
+                                        <div className="p-4 rounded bg-[#161b22] border border-[#30363d]">
+                                            <div className="text-[#8b949e] text-xs uppercase font-bold mb-2">Target (Microservice)</div>
+                                            <div className="text-[#c9d1d9]">Python FastAPI / AWS ECS</div>
+                                            <div className="text-green-400 text-xs mt-1 flex items-center gap-1"><Icon name="Check" size={12}/> OAuth2 / OIDC</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="p-4 rounded bg-[#161b22] border border-[#30363d] mb-6">
+                                        <div className="text-[#8b949e] text-xs uppercase font-bold mb-2">Kickstart Boilerplate Config</div>
+                                        <pre className="text-xs font-mono text-blue-300">
+                                            {`FROM acme-registry/python-base:3.11
+COPY . /app
+RUN poetry install
+# Security: Injecting Vault Agent...`}
+                                        </pre>
+                                    </div>
+
+                                    {phase !== 'coding' ? (
+                                        <button onClick={runMigration} className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded">Execute Migration Plan</button>
+                                    ) : (
+                                        <div className="p-4 bg-blue-900/20 border border-blue-500/30 text-blue-300 rounded text-center animate-pulse">
+                                            Migration in progress...
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT: INTERACTIVE CHAT */}
+                    <div className="w-96 bg-[#0d1117] flex flex-col shrink-0">
+                        <div className="p-3 border-b border-[#30363d] font-bold text-[#8b949e] flex items-center gap-2">
+                            <Icon name="Message" size={14}/> Collaborative Chat
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {chat.map((c, i) => (
+                                <div key={i} className={`flex ${c.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[90%] p-3 rounded text-xs border ${c.role === 'user' ? 'bg-[#1f6feb]/20 border-[#1f6feb]/50 text-white' : 'bg-[#161b22] border-[#30363d] text-[#c9d1d9]'}`}>
+                                        <div className="font-bold opacity-50 mb-1 uppercase text-[8px]">{c.role}</div>
+                                        {c.text}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Question Cards (Human in the Loop) */}
+                            {questions.map(q => (
+                                <div key={q.id} className="bg-[#161b22] border border-yellow-500/50 rounded p-3 animate-in shadow-lg shadow-black/50">
+                                    <div className="flex items-start gap-2 text-yellow-500 mb-2 font-bold text-xs">
+                                        <Icon name="Alert" size={14}/> Clarification Needed
+                                    </div>
+                                    <div className="text-[#c9d1d9] text-xs mb-3">{q.text}</div>
+                                    <div className="space-y-2">
+                                        {q.options.map(opt => (
+                                            <button key={opt} onClick={() => handleAnswer(q.id, opt)} className="w-full text-left px-3 py-2 rounded bg-[#0d1117] border border-[#30363d] hover:border-blue-500 text-xs text-[#8b949e] hover:text-white transition-colors">
+                                                {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="p-3 border-t border-[#30363d]">
+                            <input 
+                                className="w-full bg-[#161b22] border border-[#30363d] rounded p-2 text-xs text-white focus:border-blue-500 outline-none"
+                                placeholder="Message the architect..."
+                            />
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
