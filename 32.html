@@ -3,235 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Immuta Data Portal | Upload & Track</title>
+    <title>Immuta Data Portal | Salt Design</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
+            /* Salt UI Dark Theme Palette */
+            --salt-bg-app: #161616;
+            --salt-bg-surface: #1e1e1e;
+            --salt-bg-active: #2d2d2d;
+            --salt-border-color: #333333;
+            --salt-text-primary: #ffffff;
+            --salt-text-secondary: #aaaaaa;
+            --salt-blue-accent: #4c88ff;
+            --salt-status-success: #2dce98;
+            --salt-status-error: #f5365c;
+            --salt-status-warning: #fb6340;
         }
 
         body { 
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f8fafc;
-        }
-        
-        .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--salt-bg-app);
+            color: var(--salt-text-primary);
+            letter-spacing: -0.01em;
         }
 
-        .upload-gradient {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        /* Salt UI Component Mimicry */
+        .salt-card {
+            background-color: var(--salt-bg-surface);
+            border: 1px solid var(--salt-border-color);
+            border-radius: 4px;
         }
 
-        .status-pulse {
-            position: relative;
+        .salt-button-primary {
+            background-color: var(--salt-blue-accent);
+            color: white;
+            transition: all 0.2s;
         }
-        .status-pulse::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            background: inherit;
-            border-radius: inherit;
-            animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-            z-index: -1;
+        .salt-button-primary:hover {
+            filter: brightness(1.1);
         }
 
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); opacity: 0.8; }
-            100% { transform: scale(1.5); opacity: 0; }
+        .salt-input {
+            background-color: #121212;
+            border: 1px solid var(--salt-border-color);
+            color: white;
+        }
+        .salt-input:focus {
+            border-color: var(--salt-blue-accent);
+            outline: none;
         }
 
-        .tab-active {
-            color: var(--primary);
-            border-bottom: 2px solid var(--primary);
+        .salt-table-header {
+            background-color: #1a1a1a;
+            border-bottom: 2px solid var(--salt-border-color);
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .salt-status-pill {
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Custom Scrollbar for Dark Theme */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #161616; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
+
+        .active-tab {
+            color: var(--salt-blue-accent);
+            border-bottom: 2px solid var(--salt-blue-accent);
+        }
+
+        .metric-label {
+            color: var(--salt-text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
     </style>
 </head>
-<body class="text-slate-900 overflow-x-hidden">
+<body class="overflow-hidden">
 
-    <!-- Sidebar Decoration -->
-    <div class="fixed top-0 left-0 w-1 h-full upload-gradient"></div>
-
-    <div class="flex min-h-screen">
+    <div class="flex h-screen w-full">
         
-        <!-- Main Content -->
-        <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-            
-            <!-- Top Navigation & Profile -->
-            <nav class="flex justify-between items-center mb-10">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 upload-gradient rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-                        <i class="fas fa-layer-group text-white text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-bold tracking-tight text-slate-800">Immuta<span class="text-indigo-600">Portal</span></h1>
-                        <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Data Governance Console</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-4">
-                    <div class="hidden md:flex flex-col items-end mr-2">
-                        <span class="text-sm font-semibold">Admin User</span>
-                        <span class="text-xs text-green-500 flex items-center">
-                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span> System Online
-                        </span>
-                    </div>
-                    <div class="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="avatar">
-                    </div>
-                </div>
+        <!-- Sidebar Navigation (Salt Lab style) -->
+        <aside class="w-16 flex flex-col items-center py-6 border-r border-[#333] bg-[#1a1a1a] z-50">
+            <div class="w-10 h-10 bg-blue-600 rounded flex items-center justify-center mb-10">
+                <i class="fas fa-shield-halved text-white"></i>
+            </div>
+            <nav class="flex flex-col space-y-8 text-slate-500">
+                <button class="text-white"><i class="fas fa-chart-line text-lg"></i></button>
+                <button class="hover:text-white transition-colors"><i class="fas fa-database text-lg"></i></button>
+                <button class="hover:text-white transition-colors"><i class="fas fa-clock-rotate-left text-lg"></i></button>
+                <button class="hover:text-white transition-colors"><i class="fas fa-cog text-lg"></i></button>
             </nav>
-
-            <!-- Stats Overview -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="glass p-5 rounded-2xl shadow-sm border border-slate-200/60">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Uploads</p>
-                    <h3 class="text-2xl font-bold" id="stat-total">0</h3>
-                </div>
-                <div class="glass p-5 rounded-2xl shadow-sm border border-slate-200/60">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Active Tasks</p>
-                    <h3 class="text-2xl font-bold text-indigo-600" id="stat-active">0</h3>
-                </div>
-                <div class="glass p-5 rounded-2xl shadow-sm border border-slate-200/60">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Success Rate</p>
-                    <h3 class="text-2xl font-bold text-emerald-600" id="stat-rate">0%</h3>
-                </div>
-                <div class="glass p-5 rounded-2xl shadow-sm border border-slate-200/60">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Errors</p>
-                    <h3 class="text-2xl font-bold text-rose-500" id="stat-errors">0</h3>
-                </div>
+            <div class="mt-auto">
+                <div class="w-8 h-8 rounded-full bg-slate-700 border border-slate-600"></div>
             </div>
+        </aside>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            
+            <!-- Global Top Bar -->
+            <header class="h-14 border-b border-[#333] bg-[#1a1a1a] flex items-center justify-between px-6">
+                <div class="flex items-center space-x-4">
+                    <h2 class="text-sm font-bold tracking-tight">IMMUTA <span class="text-blue-500">DATA PORTAL</span></h2>
+                    <span class="px-2 py-0.5 bg-[#2a2a2a] text-[10px] rounded text-blue-400 border border-blue-900 font-mono">v4.2.1-stable</span>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <div class="text-[11px] font-bold">
+                        <span class="text-emerald-500"><i class="fas fa-circle text-[8px] mr-2"></i>GATEWAY CONNECTED</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <main class="flex-1 overflow-y-auto p-6 space-y-6">
                 
-                <!-- Left: Upload Action Card -->
-                <div class="lg:col-span-4 space-y-6">
-                    <div class="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
-                        <h2 class="text-xl font-bold mb-6 text-slate-800">Ingest Dataset</h2>
-                        
-                        <div id="upload-area" class="group relative border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center transition-all cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30">
-                            <input type="file" id="file-input" class="hidden" multiple>
-                            <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                <i class="fas fa-cloud-arrow-up text-3xl text-slate-400 group-hover:text-indigo-500"></i>
-                            </div>
-                            <p class="text-sm font-bold text-slate-700">Drop files here</p>
-                            <p class="text-xs text-slate-400 mt-2 leading-relaxed">Files will be automatically registered <br> in the governance catalog.</p>
-                        </div>
-
-                        <!-- Mini Progress during active upload -->
-                        <div id="active-upload-status" class="mt-8 hidden">
-                            <div class="flex items-center justify-between mb-2">
-                                <span id="active-filename" class="text-xs font-bold truncate max-w-[150px]">file.csv</span>
-                                <span id="active-percent" class="text-xs font-bold text-indigo-600">0%</span>
-                            </div>
-                            <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                <div id="active-progress-bar" class="h-full upload-gradient w-0 transition-all duration-300"></div>
-                            </div>
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="salt-card p-4">
+                        <p class="metric-label">Total Volume</p>
+                        <h3 class="text-2xl font-bold mt-1" id="stat-total">0</h3>
+                        <p class="text-[10px] text-slate-500 mt-2"><span class="text-emerald-400">↑ 12%</span> vs last period</p>
+                    </div>
+                    <div class="salt-card p-4">
+                        <p class="metric-label">Active Trackers</p>
+                        <h3 class="text-2xl font-bold mt-1 text-blue-500" id="stat-active">0</h3>
+                        <p class="text-[10px] text-slate-500 mt-2">Queue latency: 42ms</p>
+                    </div>
+                    <div class="salt-card p-4">
+                        <p class="metric-label">Success Rate</p>
+                        <h3 class="text-2xl font-bold mt-1" id="stat-rate">0%</h3>
+                        <div class="w-full bg-[#121212] h-1 mt-3 rounded-full overflow-hidden">
+                            <div id="rate-bar" class="bg-emerald-500 h-full w-0 transition-all duration-1000"></div>
                         </div>
                     </div>
-
-                    <div class="glass p-6 rounded-2xl border border-indigo-100 bg-indigo-50/20">
-                        <h4 class="text-xs font-black text-indigo-900 uppercase tracking-widest mb-3">System Notification</h4>
-                        <p class="text-xs text-indigo-700 leading-relaxed">
-                            Immuta is currently enforcing <strong>HIPAA & GDPR</strong> tagging on all incoming CSV and Parquet files automatically.
-                        </p>
+                    <div class="salt-card p-4 border-l-2 border-rose-500">
+                        <p class="metric-label">Validation Errors</p>
+                        <h3 class="text-2xl font-bold mt-1 text-rose-500" id="stat-errors">0</h3>
+                        <p class="text-[10px] text-slate-500 mt-2">Requires manual review</p>
                     </div>
                 </div>
 
-                <!-- Right: Tabs & Data Table -->
-                <div class="lg:col-span-8">
-                    <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                        
-                        <!-- Tab Navigation -->
-                        <div class="px-8 pt-6 border-b border-slate-50 flex items-center space-x-8">
-                            <button onclick="switchTab('active')" id="tab-active-btn" class="pb-4 text-sm font-bold transition-all tab-active">
-                                Active Trackers
-                            </button>
-                            <button onclick="switchTab('history')" id="tab-history-btn" class="pb-4 text-sm font-bold text-slate-400 transition-all hover:text-slate-600">
-                                History
-                            </button>
+                <!-- Primary Workplace Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Left: Ingestion Controller -->
+                    <div class="lg:col-span-4 space-y-4">
+                        <div class="salt-card p-6 bg-[#1a1a1a]">
+                            <h3 class="text-xs font-bold uppercase text-slate-400 mb-6 flex items-center">
+                                <i class="fas fa-plus-circle mr-2"></i> New Data Ingestion
+                            </h3>
                             
-                            <div class="flex-1"></div>
+                            <div id="upload-area" class="group border-2 border-dashed border-[#444] rounded p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-900/10 transition-all">
+                                <input type="file" id="file-input" class="hidden" multiple>
+                                <i class="fas fa-file-arrow-up text-3xl text-slate-600 mb-4 group-hover:text-blue-500 group-hover:scale-110 transition-all"></i>
+                                <p class="text-sm font-semibold">Stage Dataset</p>
+                                <p class="text-[11px] text-slate-500 mt-2 font-mono">DRAG & DROP OR EXPLORE</p>
+                            </div>
 
-                            <div class="pb-4 flex items-center space-x-2">
-                                <button id="refresh-btn" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 text-slate-400 transition-colors">
-                                    <i class="fas fa-rotate"></i>
-                                </button>
-                                <div class="h-4 w-[1px] bg-slate-200"></div>
-                                <div class="relative">
-                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
-                                    <input type="text" id="search-input" placeholder="Search ID..." class="pl-8 pr-4 py-1.5 bg-slate-50 border-none rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 w-32 md:w-48">
+                            <div id="active-upload-status" class="mt-6 hidden space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span id="active-filename" class="text-xs font-mono text-blue-400 truncate w-32">file.parquet</span>
+                                    <span id="active-percent" class="text-xs font-bold">0%</span>
+                                </div>
+                                <div class="h-1 w-full bg-[#121212] rounded-full overflow-hidden">
+                                    <div id="active-progress-bar" class="h-full bg-blue-500 w-0 transition-all"></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Table Area -->
-                        <div class="min-h-[400px]">
-                            <table class="w-full">
-                                <thead class="bg-slate-50/50">
-                                    <tr>
-                                        <th class="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset</th>
-                                        <th class="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Tracker ID</th>
-                                        <th class="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        <th class="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Manage</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-body" class="divide-y divide-slate-50">
-                                    <!-- Dynamic Content -->
-                                </tbody>
-                            </table>
-                            
-                            <!-- Empty State -->
-                            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-slate-400">
-                                <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                    <i class="fas fa-inbox text-2xl"></i>
+                        <div class="salt-card p-5 bg-[#121212]">
+                            <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Ingestion Policy</h4>
+                            <div class="space-y-3">
+                                <div class="flex items-start">
+                                    <i class="fas fa-check-circle text-emerald-500 text-[10px] mt-1 mr-3"></i>
+                                    <p class="text-[11px] text-slate-400">Automatic PII Discovery (Enabled)</p>
                                 </div>
-                                <p class="text-sm font-medium">No tasks found in this view</p>
+                                <div class="flex items-start">
+                                    <i class="fas fa-check-circle text-emerald-500 text-[10px] mt-1 mr-3"></i>
+                                    <p class="text-[11px] text-slate-400">GDPR Compliance Mapping</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Tracker & History Tabbed Container -->
+                    <div class="lg:col-span-8">
+                        <div class="salt-card overflow-hidden">
+                            <div class="flex items-center px-6 pt-4 border-b border-[#333]">
+                                <div class="flex space-x-6 h-full">
+                                    <button onclick="switchTab('active')" id="tab-active-btn" class="pb-3 text-xs font-bold uppercase tracking-wider transition-all active-tab">
+                                        Live Trackers
+                                    </button>
+                                    <button onclick="switchTab('history')" id="tab-history-btn" class="pb-3 text-xs font-bold uppercase tracking-wider text-slate-500 transition-all hover:text-white">
+                                        History Archive
+                                    </button>
+                                </div>
+                                <div class="ml-auto pb-3 flex items-center space-x-4">
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[10px]"></i>
+                                        <input type="text" id="search-input" placeholder="SEARCH UUID..." class="salt-input pl-8 pr-4 py-1 text-[10px] font-mono rounded w-48">
+                                    </div>
+                                    <button id="refresh-btn" class="text-slate-500 hover:text-white transition-all">
+                                        <i class="fas fa-arrows-rotate text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="min-h-[440px]">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="salt-table-header">
+                                        <tr>
+                                            <th class="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase">Asset Name</th>
+                                            <th class="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase">UUID Tracker</th>
+                                            <th class="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase">Stage Status</th>
+                                            <th class="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-body" class="divide-y divide-[#2a2a2a]">
+                                        <!-- Content Injected via Script -->
+                                    </tbody>
+                                </table>
+                                
+                                <div id="empty-state" class="hidden py-24 flex flex-col items-center justify-center opacity-30">
+                                    <i class="fas fa-database text-4xl mb-4"></i>
+                                    <p class="text-xs font-bold uppercase tracking-widest">No matching records</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 translate-y-32 transition-all duration-500 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 z-50">
-        <span id="toast-icon-box" class="w-6 h-6 rounded-full flex items-center justify-center text-[10px]">
-            <i class="fas fa-info"></i>
-        </span>
-        <span id="toast-msg" class="text-sm font-semibold tracking-tight"></span>
+    <!-- Notification Toast (Salt Alert Component) -->
+    <div id="toast" class="fixed top-8 right-8 translate-x-[400px] transition-all duration-500 salt-card p-4 w-72 flex items-start space-x-3 z-[100] shadow-2xl border-l-4">
+        <i id="toast-icon" class="fas fa-circle-info mt-1"></i>
+        <div>
+            <p id="toast-title" class="text-[11px] font-black uppercase tracking-wider mb-0.5">Notification</p>
+            <p id="toast-msg" class="text-xs text-slate-400"></p>
+        </div>
     </div>
 
     <script>
-        // State Management
+        // State
         let tasks = [];
-        let currentTab = 'active'; // 'active' or 'history'
+        let currentTab = 'active';
         
-        // DOM Elements
+        // Configuration
+        const REFRESH_RATE = 3000;
+
+        // Elements
         const tableBody = document.getElementById('table-body');
         const emptyState = document.getElementById('empty-state');
         const uploadArea = document.getElementById('upload-area');
         const fileInput = document.getElementById('file-input');
         const searchInput = document.getElementById('search-input');
         
-        // Initializer
         window.addEventListener('DOMContentLoaded', () => {
             loadTasks();
             initEvents();
@@ -241,29 +280,24 @@
 
         function initEvents() {
             uploadArea.addEventListener('click', () => fileInput.click());
-            
             uploadArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                uploadArea.classList.add('border-indigo-400', 'bg-indigo-50/50');
+                uploadArea.classList.add('border-blue-500', 'bg-blue-900/10');
             });
-
             uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('border-indigo-400', 'bg-indigo-50/50');
+                uploadArea.classList.remove('border-blue-500', 'bg-blue-900/10');
             });
-
             uploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
-                uploadArea.classList.remove('border-indigo-400', 'bg-indigo-50/50');
+                uploadArea.classList.remove('border-blue-500', 'bg-blue-900/10');
                 if (e.dataTransfer.files.length) handleFileUpload(e.dataTransfer.files[0]);
             });
-
             fileInput.addEventListener('change', (e) => {
                 if (e.target.files.length) handleFileUpload(e.target.files[0]);
             });
-
             searchInput.addEventListener('input', render);
             document.getElementById('refresh-btn').addEventListener('click', () => {
-                showToast("Refreshing records...", "info");
+                showToast("Refreshing Catalog...", "info");
                 render();
             });
         }
@@ -278,8 +312,7 @@
             fileNameUI.textContent = file.name;
 
             try {
-                // Simulation of POST request to backend
-                const trackerId = await simulateBackendUpload((p) => {
+                const trackerId = await simulateUpload((p) => {
                     percentUI.textContent = `${p}%`;
                     barUI.style.width = `${p}%`;
                 });
@@ -291,108 +324,90 @@
                     status: 'Processing',
                     progress: 10,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    date: new Date().toLocaleDateString(),
-                    details: 'Governance check initiated'
+                    details: 'Initialization'
                 };
 
                 tasks.unshift(newTask);
                 saveTasks();
-                showToast("File uploaded successfully", "success");
-                
-                // Start status polling
+                showToast("Asset Successfully Staged", "success");
                 pollStatus(trackerId);
-                
                 render();
                 updateStats();
 
             } catch (err) {
-                showToast("Upload failed", "error");
+                showToast("Backend Rejection", "error");
             } finally {
                 setTimeout(() => {
                     statusUI.classList.add('hidden');
                     barUI.style.width = '0%';
-                }, 1000);
+                }, 800);
             }
         }
 
         function pollStatus(id) {
             const interval = setInterval(() => {
                 const task = tasks.find(t => t.id === id);
-                if (!task || task.status === 'Completed' || task.status === 'Failed') {
+                if (!task || ['Completed', 'Failed'].includes(task.status)) {
                     clearInterval(interval);
                     return;
                 }
 
-                // Simulate status progression from backend status endpoint
                 if (task.progress < 100) {
                     task.progress += 20;
-                    if (task.progress >= 40) task.details = "Scanning PII Data...";
-                    if (task.progress >= 80) task.details = "Writing Metadata...";
+                    if (task.progress >= 40) task.details = "Policy Enforcement";
+                    if (task.progress >= 80) task.details = "Immuta Syncing";
                 }
 
                 if (task.progress >= 100) {
-                    task.status = Math.random() > 0.1 ? 'Completed' : 'Failed';
-                    task.details = task.status === 'Completed' ? 'Asset Registered' : 'Validation Error';
-                    showToast(`Task ${id} ${task.status.toLowerCase()}`, task.status.toLowerCase());
+                    task.status = Math.random() > 0.08 ? 'Completed' : 'Failed';
+                    task.details = task.status === 'Completed' ? 'Governance Applied' : 'Policy Violation';
+                    showToast(`${task.id}: ${task.status}`, task.status.toLowerCase());
                     clearInterval(interval);
                     updateStats();
                 }
 
                 saveTasks();
                 render();
-            }, 3000);
-        }
-
-        function switchTab(tab) {
-            currentTab = tab;
-            document.getElementById('tab-active-btn').className = `pb-4 text-sm font-bold transition-all ${tab === 'active' ? 'tab-active' : 'text-slate-400 hover:text-slate-600'}`;
-            document.getElementById('tab-history-btn').className = `pb-4 text-sm font-bold transition-all ${tab === 'history' ? 'tab-active' : 'text-slate-400 hover:text-slate-600'}`;
-            render();
+            }, REFRESH_RATE);
         }
 
         function render() {
             const query = searchInput.value.toLowerCase();
-            const filteredTasks = tasks.filter(t => {
-                const isCorrectTab = currentTab === 'active' 
+            const filtered = tasks.filter(t => {
+                const isTab = currentTab === 'active' 
                     ? ['Pending', 'Processing'].includes(t.status)
                     : ['Completed', 'Failed'].includes(t.status);
-                
-                const matchesSearch = t.id.toLowerCase().includes(query) || t.filename.toLowerCase().includes(query);
-                return isCorrectTab && matchesSearch;
+                const isMatch = t.id.toLowerCase().includes(query) || t.filename.toLowerCase().includes(query);
+                return isTab && isMatch;
             });
 
-            if (filteredTasks.length === 0) {
+            if (filtered.length === 0) {
                 tableBody.innerHTML = '';
                 emptyState.classList.remove('hidden');
             } else {
                 emptyState.classList.add('hidden');
-                tableBody.innerHTML = filteredTasks.map(t => `
-                    <tr class="group hover:bg-slate-50 transition-colors">
-                        <td class="px-8 py-5">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center text-xs">
-                                    <i class="fas ${t.filename.endsWith('.csv') ? 'fa-file-csv' : 'fa-file-lines'}"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-700">${t.filename}</p>
-                                    <p class="text-[10px] text-slate-400 font-medium">${t.size} • ${t.timestamp}</p>
-                                </div>
+                tableBody.innerHTML = filtered.map(t => `
+                    <tr class="group hover:bg-[#252525] transition-colors border-l-2 border-transparent hover:border-blue-500">
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-white">${t.filename}</span>
+                                <span class="text-[10px] text-slate-500 font-mono">${t.size} • ${t.timestamp}</span>
                             </div>
                         </td>
-                        <td class="px-8 py-5">
-                            <span class="font-mono text-[11px] text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                        <td class="px-6 py-4">
+                            <span class="font-mono text-[10px] text-slate-400">
                                 ${t.id}
                             </span>
                         </td>
-                        <td class="px-8 py-5">
+                        <td class="px-6 py-4">
                             <div class="flex flex-col">
-                                ${getStatusBadge(t.status)}
-                                <span class="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">${t.details}</span>
+                                <div>${getStatusUI(t.status)}</div>
+                                <span class="text-[9px] text-slate-500 mt-1 uppercase font-bold">${t.details}</span>
                             </div>
                         </td>
-                        <td class="px-8 py-5 text-right">
-                            <button onclick="deleteTask('${t.id}')" class="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-rose-500 transition-all">
-                                <i class="fas fa-trash-can text-sm"></i>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="removeTask('${t.id}')" class="opacity-0 group-hover:opacity-100 p-2 text-slate-600 hover:text-rose-500 transition-all">
+                                <i class="fas fa-trash-can text-xs"></i>
                             </button>
                         </td>
                     </tr>
@@ -400,14 +415,21 @@
             }
         }
 
-        function getStatusBadge(status) {
-            const config = {
-                'Processing': 'bg-indigo-100 text-indigo-700 border-indigo-200 status-pulse',
-                'Completed': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-                'Failed': 'bg-rose-100 text-rose-700 border-rose-200',
-                'Pending': 'bg-slate-100 text-slate-600 border-slate-200'
+        function getStatusUI(status) {
+            const map = {
+                'Processing': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+                'Completed': 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+                'Failed': 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+                'Pending': 'bg-slate-500/10 text-slate-500 border-slate-500/20'
             };
-            return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${config[status]}">${status}</span>`;
+            return `<span class="salt-status-pill border ${map[status]}">${status}</span>`;
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-active-btn').className = `pb-3 text-xs font-bold uppercase tracking-wider transition-all ${tab === 'active' ? 'active-tab' : 'text-slate-500 hover:text-white'}`;
+            document.getElementById('tab-history-btn').className = `pb-3 text-xs font-bold uppercase tracking-wider transition-all ${tab === 'history' ? 'active-tab' : 'text-slate-500 hover:text-white'}`;
+            render();
         }
 
         function updateStats() {
@@ -417,81 +439,63 @@
             const success = tasks.filter(t => t.status === 'Completed').length;
             const rate = total > 0 ? Math.round((success / (success + errors || 1)) * 100) : 0;
 
-            animateValue('stat-total', total);
-            animateValue('stat-active', active);
-            animateValue('stat-errors', errors);
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-active').textContent = active;
+            document.getElementById('stat-errors').textContent = errors;
             document.getElementById('stat-rate').textContent = `${rate}%`;
+            document.getElementById('rate-bar').style.width = `${rate}%`;
         }
 
-        // Logic Utils
-        function simulateBackendUpload(onProgress) {
-            return new Promise((resolve) => {
+        function simulateUpload(cb) {
+            return new Promise(resolve => {
                 let p = 0;
                 const timer = setInterval(() => {
-                    p += 20;
-                    onProgress(p);
+                    p += 25;
+                    cb(p);
                     if (p >= 100) {
                         clearInterval(timer);
-                        resolve('IM-' + Math.random().toString(36).substring(2, 8).toUpperCase());
+                        resolve('UUID-' + Math.random().toString(16).substring(2, 10).toUpperCase());
                     }
-                }, 300);
+                }, 200);
             });
         }
 
-        function deleteTask(id) {
+        function removeTask(id) {
             tasks = tasks.filter(t => t.id !== id);
             saveTasks();
             updateStats();
             render();
-            showToast("Record removed", "info");
         }
 
-        function saveTasks() {
-            localStorage.setItem('immuta_portal_tasks', JSON.stringify(tasks));
-        }
-
+        function saveTasks() { localStorage.setItem('immuta_salt_tasks', JSON.stringify(tasks)); }
         function loadTasks() {
-            const saved = localStorage.getItem('immuta_portal_tasks');
+            const saved = localStorage.getItem('immuta_salt_tasks');
             if (saved) {
                 tasks = JSON.parse(saved);
-                // Restart polling for unfinished tasks
-                tasks.forEach(t => {
-                    if (['Pending', 'Processing'].includes(t.status)) pollStatus(t.id);
-                });
+                tasks.forEach(t => { if (['Pending', 'Processing'].includes(t.status)) pollStatus(t.id); });
             }
-        }
-
-        function animateValue(id, value) {
-            const obj = document.getElementById(id);
-            let start = parseInt(obj.textContent) || 0;
-            const duration = 500;
-            let startTime = null;
-
-            function step(timestamp) {
-                if (!startTime) startTime = timestamp;
-                const progress = Math.min((timestamp - startTime) / duration, 1);
-                obj.innerHTML = Math.floor(progress * (value - start) + start);
-                if (progress < 1) window.requestAnimationFrame(step);
-            }
-            window.requestAnimationFrame(step);
         }
 
         function showToast(msg, type) {
             const toast = document.getElementById('toast');
-            const iconBox = document.getElementById('toast-icon-box');
+            const icon = document.getElementById('toast-icon');
+            const title = document.getElementById('toast-title');
             const msgBox = document.getElementById('toast-msg');
 
-            const colors = {
-                success: 'bg-emerald-500',
-                error: 'bg-rose-500',
-                info: 'bg-indigo-500'
+            const themes = {
+                success: { color: 'border-emerald-500', icon: 'fa-circle-check text-emerald-500', title: 'System Success' },
+                error: { color: 'border-rose-500', icon: 'fa-circle-exclamation text-rose-500', title: 'Critical Error' },
+                info: { color: 'border-blue-500', icon: 'fa-circle-info text-blue-500', title: 'Catalog Update' }
             };
 
-            iconBox.className = `w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${colors[type] || colors.info}`;
+            const theme = themes[type] || themes.info;
+            toast.className = toast.className.replace(/border-(emerald|rose|blue)-500/, '') + ' ' + theme.color;
+            icon.className = `fas ${theme.icon} mt-1`;
+            title.textContent = theme.title;
             msgBox.textContent = msg;
-            
-            toast.classList.remove('translate-y-32');
-            setTimeout(() => toast.classList.add('translate-y-32'), 3000);
+
+            toast.classList.remove('translate-x-[400px]');
+            setTimeout(() => toast.classList.add('translate-x-[400px]'), 3500);
         }
     </script>
 </body>
